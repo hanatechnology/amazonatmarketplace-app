@@ -70,20 +70,29 @@ class _ProductCardState extends State<ProductCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Image area ──────────────────────────────
-            Stack(
+            // Flexes so the info area below always keeps the height its fixed
+            // content needs. The card's height comes from the grid's
+            // childAspectRatio and so shrinks with the column width, while the
+            // info content (2-line name, price, 36px button) does not — a
+            // fixed-height image squeezed it until it overflowed on narrow
+            // screens. The image absorbs the difference instead.
+            Expanded(
+              child: Stack(
               children: [
-                Padding(
+                Positioned.fill(
+                  child: Padding(
                   padding: const EdgeInsets.all(7),
                   child: ClipRRect(
                     borderRadius:
                         BorderRadius.circular(MarketplaceRadius.cardImage),
                     child: AppNetworkImage(
                       imageUrl: widget.imageUrl,
-                      width: MarketplaceSpacing.productCardWidth - 14,
-                      height: MarketplaceSpacing.productImageHeight,
+                      width: double.infinity,
+                      height: double.infinity,
                       fit: BoxFit.contain,
                     ),
                   ),
+                ),
                 ),
 
                 // Discount badge — top left
@@ -122,14 +131,16 @@ class _ProductCardState extends State<ProductCard> {
                 ),
               ],
             ),
+            ),
 
             // ── Info area ───────────────────────────────
-            Expanded(
-              child: Padding(
+            // MainAxisSize.min: the image above takes the slack now, so this
+            // sizes to its content instead of stretching.
+            Padding(
                 padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Name + seller
                     Column(
@@ -150,6 +161,7 @@ class _ProductCardState extends State<ProductCard> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 6),
 
                     // Price + rating row
                     Row(
@@ -178,6 +190,8 @@ class _ProductCardState extends State<ProductCard> {
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 6),
 
                     // Add to Cart — 36px height (up from 28px for a11y)
                     SizedBox(
@@ -215,7 +229,6 @@ class _ProductCardState extends State<ProductCard> {
                     ),
                   ],
                 ),
-              ),
             ),
           ],
         ),
