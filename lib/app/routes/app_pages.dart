@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'app_routes.dart';
 
@@ -12,6 +13,8 @@ import '../../presentation/pages/marketplace/auth/complete_details_page.dart';
 import '../../presentation/pages/marketplace/main_navigation_page.dart';
 import '../../presentation/pages/marketplace/product/product_details_page.dart';
 import '../../presentation/pages/marketplace/category/products_list_page.dart';
+import '../../presentation/pages/marketplace/search/product_search_page.dart';
+import '../../presentation/pages/marketplace/search/bindings/product_search_binding.dart';
 import '../../presentation/pages/marketplace/category/bindings/products_list_binding.dart';
 import '../../presentation/pages/marketplace/product/reviews_page.dart';
 import '../../presentation/pages/marketplace/product/product_sellers_page.dart';
@@ -97,6 +100,16 @@ abstract class AppPages {
       page: () => const ProductsListPage(),
       binding: ProductsListBinding(),
       transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.MARKETPLACE_SEARCH,
+      page: () => const ProductSearchPage(),
+      binding: ProductSearchBinding(),
+      // Rises from the bottom with a fade rather than the usual lateral push —
+      // search is a mode you enter over the current screen, not a sibling page.
+      transition: Transition.downToUp,
+      curve: Curves.easeOutCubic,
+      transitionDuration: const Duration(milliseconds: 320),
     ),
     GetPage(
       name: Routes.MARKETPLACE_PRODUCT,

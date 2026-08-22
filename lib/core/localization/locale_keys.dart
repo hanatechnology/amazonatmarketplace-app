@@ -267,6 +267,10 @@ abstract class LocaleKeys {
   static const String sortPriceLowHigh = 'sort_price_low_high';
   static const String sortPriceHighLow = 'sort_price_high_low';
   static const String sortRating = 'sort_rating';
+  static const String sortNameAsc = 'sort_name_asc';
+  static const String searchResultsFor = 'search_results_for';
+  static const String activeFilters = 'active_filters';
+  static const String searchHint = 'search_hint';
   static const String priceRange = 'price_range';
   static const String minRating = 'min_rating';
   static const String andAbove = 'and_above';

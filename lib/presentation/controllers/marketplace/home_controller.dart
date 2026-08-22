@@ -11,7 +11,6 @@ import '../../../domain/usecases/base_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_products_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_products_page_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_categories_use_case.dart';
-import '../../../domain/usecases/marketplace/product/search_products_use_case.dart';
 
 class HomeController extends BaseStateController<GetProductsUseCase> {
   /// Matches the API default page size for `/products`.
@@ -20,11 +19,9 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
   // ── Operation keys ─────────────────────────────────────
   static const String kCategories = 'categories';
   static const String kProducts = 'products';
-  static const String kSearch = 'search';
   static const String kBanners = 'banners';
 
   // ── Local reactive state ───────────────────────────────
-  final searchQuery = ''.obs;
   final activeBannerIndex = 0.obs;
   final hasMoreProducts = false.obs;
   final isLoadingMoreProducts = false.obs;
@@ -80,19 +77,6 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
     await loadHomeData();
   }
 
-  /// Search products
-  Future<void> searchProducts(String query) async {
-    searchQuery.value = query;
-    if (query.isEmpty) {
-      // Reset to the unfiltered first page.
-      await loadProducts();
-      return;
-    }
-    await handleState(
-      kSearch,
-      () => Get.find<SearchProductsUseCase>().call(query),
-    );
-  }
 
   /// Load (or reload) the first page of products.
   Future<void> loadProducts() async {

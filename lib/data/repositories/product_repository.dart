@@ -63,6 +63,7 @@ class ProductRepository extends BaseRepository<ApiService> {
     String? featuredSection,
     String? sortBy,
     String? sortDirection,
+    Map<String, dynamic>? extraParams,
   }) {
     return get(
       '/products',
@@ -87,6 +88,9 @@ class ProductRepository extends BaseRepository<ApiService> {
         if (featuredSection != null) 'featured_section': featuredSection,
         if (sortBy != null) 'sortBy': sortBy,
         if (sortDirection != null) 'sortDirection': sortDirection,
+        // Carries the endpoint's generic `filters` object, already flattened to
+        // `filters[gte_base_price]` style keys.
+        ...?extraParams,
       },
     );
   }

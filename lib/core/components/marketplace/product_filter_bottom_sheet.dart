@@ -5,12 +5,36 @@ import '../../theme/marketplace_typography.dart';
 import '../../theme/marketplace_spacing.dart';
 import '../../theme/marketplace_radius.dart';
 import '../../localization/locale_keys.dart';
-import '../../../presentation/controllers/marketplace/products_list_controller.dart';
+import '../../../domain/entities/marketplace/category_entity.dart';
+import '../../../domain/entities/marketplace/product_filter.dart';
 
-class ProductFilterBottomSheet extends StatelessWidget {
-  const ProductFilterBottomSheet({super.key, required this.controller});
+/// Filter sheet for any product list.
+///
+/// Takes a filter and hands one back — it holds no controller reference, so
+/// home, search and the category list can all share it.
+class ProductFilterBottomSheet extends StatefulWidget {
+  const ProductFilterBottomSheet({
+    super.key,
+    required this.initial,
+    required this.onApply,
+    this.categories = const [],
+    this.maxPrice = 500,
+  });
 
-  final ProductsListController controller;
+  final ProductFilter initial;
+  final ValueChanged<ProductFilter> onApply;
+  final List<CategoryEntity> categories;
+  final double maxPrice;
+
+  @override
+  State<ProductFilterBottomSheet> createState() =>
+      _ProductFilterBottomSheetState();
+}
+
+class _ProductFilterBottomSheetState extends State<ProductFilterBottomSheet> {
+  late ProductFilter _temp = widget.initial;
+
+  void _update(ProductFilter next) => setState(() => _temp = next);
 
   @override
   Widget build(BuildContext context) {
@@ -21,13 +45,10 @@ class ProductFilterBottomSheet extends StatelessWidget {
           top: Radius.circular(MarketplaceRadius.bottomNav),
         ),
       ),
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ── Handle ───────────────────────────────────
           const SizedBox(height: 12),
           Container(
             width: 40,
@@ -52,9 +73,7 @@ class ProductFilterBottomSheet extends StatelessWidget {
                   style: MarketplaceTypography.sectionHeading,
                 ),
                 TextButton(
-                  onPressed: () {
-                    controller.tempFilter.value = const ProductFilter();
-                  },
+                  onPressed: () => _update(const ProductFilter()),
                   child: Text(
                     LocaleKeys.clearAll.tr,
                     style: MarketplaceTypography.cardTitle.copyWith(
@@ -68,145 +87,106 @@ class ProductFilterBottomSheet extends StatelessWidget {
 
           const Divider(color: MarketplaceColors.stroke, height: 1),
 
-          // ── Scrollable content ────────────────────────
           ConstrainedBox(
             constraints: BoxConstraints(
               maxHeight: MediaQuery.of(context).size.height * 0.65,
             ),
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(MarketplaceSpacing.screenPaddingH),
-              child: Obx(() {
-                final temp = controller.tempFilter.value;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Sort By ─────────────────────────
+                  Text(
+                    LocaleKeys.sortBy.tr,
+                    style: MarketplaceTypography.sectionSubheading,
+                  ),
+                  const SizedBox(height: MarketplaceSpacing.sm),
+                  ...[
+                    (ProductSortOption.relevance, LocaleKeys.sortRelevance.tr),
+                    (ProductSortOption.priceLowHigh,
+                        LocaleKeys.sortPriceLowHigh.tr),
+                    (ProductSortOption.priceHighLow,
+                        LocaleKeys.sortPriceHighLow.tr),
+                    (ProductSortOption.nameAsc, LocaleKeys.sortNameAsc.tr),
+                  ].map((option) => _SortOptionTile(
+                        label: option.$2,
+                        isSelected: _temp.sort == option.$1,
+                        onTap: () => _update(_temp.copyWith(sort: option.$1)),
+                      )),
 
-                    // ── Sort By ─────────────────────────
-                    Text(
-                      LocaleKeys.sortBy.tr,
-                      style: MarketplaceTypography.sectionSubheading,
-                    ),
-                    const SizedBox(height: MarketplaceSpacing.sm),
-                    ...[
-                      (ProductSortOption.relevance, LocaleKeys.sortRelevance.tr),
-                      (ProductSortOption.priceLowHigh, LocaleKeys.sortPriceLowHigh.tr),
-                      (ProductSortOption.priceHighLow, LocaleKeys.sortPriceHighLow.tr),
-                      (ProductSortOption.rating, LocaleKeys.sortRating.tr),
-                    ].map((option) => _SortOptionTile(
-                          label: option.$2,
-                          isSelected: temp.sort == option.$1,
-                          onTap: () {
-                            controller.tempFilter.value =
-                                temp.copyWith(sort: option.$1);
-                          },
-                        )),
+                  const SizedBox(height: MarketplaceSpacing.lg),
+                  const Divider(color: MarketplaceColors.stroke),
+                  const SizedBox(height: MarketplaceSpacing.lg),
 
-                    const SizedBox(height: MarketplaceSpacing.lg),
-                    const Divider(color: MarketplaceColors.stroke),
-                    const SizedBox(height: MarketplaceSpacing.lg),
-
-                    // ── Price Range ─────────────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          LocaleKeys.priceRange.tr,
-                          style: MarketplaceTypography.sectionSubheading,
-                        ),
-                        Text(
-                          '\$${(temp.minPrice ?? 0).toInt()} – \$${(temp.maxPrice ?? 500).toInt()}',
-                          style: MarketplaceTypography.cardTitle.copyWith(
-                            color: MarketplaceColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: MarketplaceSpacing.sm),
-                    RangeSlider(
-                      values: RangeValues(
-                        temp.minPrice ?? 0,
-                        temp.maxPrice ?? 500,
+                  // ── Price Range ─────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        LocaleKeys.priceRange.tr,
+                        style: MarketplaceTypography.sectionSubheading,
                       ),
-                      min: 0,
-                      max: 500,
-                      divisions: 50,
-                      activeColor: MarketplaceColors.primary,
-                      inactiveColor: MarketplaceColors.stroke,
-                      onChanged: (range) {
-                        controller.tempFilter.value = temp.copyWith(
-                          minPrice: range.start,
-                          maxPrice: range.end,
-                        );
-                      },
+                      Text(
+                        '${(_temp.minPrice ?? 0).toInt()} – '
+                        '${(_temp.maxPrice ?? widget.maxPrice).toInt()}',
+                        style: MarketplaceTypography.cardTitle.copyWith(
+                          color: MarketplaceColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: MarketplaceSpacing.sm),
+                  RangeSlider(
+                    values: RangeValues(
+                      _temp.minPrice ?? 0,
+                      _temp.maxPrice ?? widget.maxPrice,
                     ),
+                    min: 0,
+                    max: widget.maxPrice,
+                    divisions: 50,
+                    activeColor: MarketplaceColors.primary,
+                    inactiveColor: MarketplaceColors.stroke,
+                    onChanged: (range) => _update(
+                      _temp.copyWith(minPrice: range.start, maxPrice: range.end),
+                    ),
+                  ),
 
+                  if (widget.categories.isNotEmpty) ...[
                     const SizedBox(height: MarketplaceSpacing.lg),
                     const Divider(color: MarketplaceColors.stroke),
                     const SizedBox(height: MarketplaceSpacing.lg),
 
-                    // ── Minimum Rating ──────────────────
+                    // ── Category ────────────────────────
                     Text(
-                      LocaleKeys.minRating.tr,
+                      LocaleKeys.category.tr,
                       style: MarketplaceTypography.sectionSubheading,
                     ),
                     const SizedBox(height: MarketplaceSpacing.sm),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [1, 2, 3, 4].map((stars) {
-                        final isSelected = temp.minRating == stars.toDouble();
-                        return GestureDetector(
-                          onTap: () {
-                            controller.tempFilter.value = isSelected
-                                ? temp.copyWith(clearRating: true)
-                                : temp.copyWith(minRating: stars.toDouble());
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? MarketplaceColors.primary
-                                  : MarketplaceColors.surface,
-                              borderRadius: BorderRadius.circular(
-                                  MarketplaceRadius.smallButton),
-                              border: Border.all(
-                                color: isSelected
-                                    ? MarketplaceColors.primary
-                                    : MarketplaceColors.stroke,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.star_rounded,
-                                  size: 16,
-                                  color: isSelected
-                                      ? MarketplaceColors.onPrimary
-                                      : MarketplaceColors.primary,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '$stars+',
-                                  style: MarketplaceTypography.cardTitle.copyWith(
-                                    color: isSelected
-                                        ? MarketplaceColors.onPrimary
-                                        : MarketplaceColors.textBody,
+                    Wrap(
+                      spacing: MarketplaceSpacing.sm,
+                      runSpacing: MarketplaceSpacing.sm,
+                      children: widget.categories.map((category) {
+                        final isSelected = _temp.categoryId == category.id;
+                        return _ChoiceChip(
+                          label: category.name,
+                          isSelected: isSelected,
+                          onTap: () => _update(
+                            isSelected
+                                ? _temp.copyWith(clearCategory: true)
+                                : _temp.copyWith(
+                                    categoryId: category.id,
+                                    categoryName: category.name,
                                   ),
-                                ),
-                              ],
-                            ),
                           ),
                         );
                       }).toList(),
                     ),
-
-                    const SizedBox(height: MarketplaceSpacing.xl),
                   ],
-                );
-              }),
+
+                  const SizedBox(height: MarketplaceSpacing.xl),
+                ],
+              ),
             ),
           ),
 
@@ -220,7 +200,7 @@ class ProductFilterBottomSheet extends StatelessWidget {
             ),
             child: ElevatedButton(
               onPressed: () {
-                controller.applyFilter(controller.tempFilter.value);
+                widget.onApply(_temp);
                 Get.back();
               },
               style: ElevatedButton.styleFrom(
@@ -239,6 +219,48 @@ class ProductFilterBottomSheet extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChoiceChip extends StatelessWidget {
+  const _ChoiceChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? MarketplaceColors.primary
+              : MarketplaceColors.surface,
+          borderRadius: BorderRadius.circular(MarketplaceRadius.smallButton),
+          border: Border.all(
+            color: isSelected
+                ? MarketplaceColors.primary
+                : MarketplaceColors.stroke,
+          ),
+        ),
+        child: Text(
+          label,
+          style: MarketplaceTypography.cardTitle.copyWith(
+            color: isSelected
+                ? MarketplaceColors.onPrimary
+                : MarketplaceColors.textBody,
+          ),
+        ),
       ),
     );
   }
@@ -263,7 +285,6 @@ class _SortOptionTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            // Radio dot
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               width: 20,

@@ -96,13 +96,21 @@ class _HomePageState extends State<HomePage> {
                   ),
                   child: Row(
                     children: [
+                      // Tapping anywhere on the bar opens the search screen
+                      // rather than typing here. Navigating on every debounced
+                      // keystroke would push a route per character; this opens
+                      // once, and the field on that screen is the live one.
                       Expanded(
-                        child: SearchBarWidget(
-                          hintText: LocaleKeys.searchProducts.tr,
-                          onSearch: controller.searchProducts,
-                          onFilter: () {
-                            // TODO: Open filter bottom sheet
-                          },
+                        child: GestureDetector(
+                          onTap: _openSearch,
+                          behavior: HitTestBehavior.opaque,
+                          child: AbsorbPointer(
+                            child: SearchBarWidget(
+                              hintText: LocaleKeys.searchProducts.tr,
+                              onSearch: (_) {},
+                              onFilter: _openSearch,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: MarketplaceSpacing.sm),
@@ -224,6 +232,10 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  /// Opens the search screen. Filters live there too, so the filter button
+  /// lands in the same place.
+  void _openSearch() => Get.toNamed(Routes.MARKETPLACE_SEARCH);
 
   /// Spinner shown while the next product page is in flight.
   Widget _buildProductsLoadMoreIndicator() {

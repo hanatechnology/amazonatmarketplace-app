@@ -82,9 +82,6 @@ class ProductsListPage extends StatelessWidget {
                   onRemovePrice: () => controller.applyFilter(
                     filter.copyWith(clearPriceRange: true),
                   ),
-                  onRemoveRating: () => controller.applyFilter(
-                    filter.copyWith(clearRating: true),
-                  ),
                 );
               }),
             ),
@@ -226,13 +223,14 @@ class ProductsListPage extends StatelessWidget {
     BuildContext context,
     ProductsListController controller,
   ) {
-    // Initialize temp filter with current
-    controller.tempFilter.value = controller.currentFilter.value;
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => ProductFilterBottomSheet(controller: controller),
+      builder: (_) => ProductFilterBottomSheet(
+        initial: controller.currentFilter.value,
+        onApply: controller.applyFilter,
+      ),
     );
   }
 }
@@ -244,13 +242,11 @@ class _ActiveFilterChips extends StatelessWidget {
     required this.filter,
     required this.onRemoveSort,
     required this.onRemovePrice,
-    required this.onRemoveRating,
   });
 
   final ProductFilter filter;
   final VoidCallback onRemoveSort;
   final VoidCallback onRemovePrice;
-  final VoidCallback onRemoveRating;
 
   String _sortLabel(ProductSortOption sort) {
     switch (sort) {
@@ -258,8 +254,8 @@ class _ActiveFilterChips extends StatelessWidget {
         return LocaleKeys.sortPriceLowHigh.tr;
       case ProductSortOption.priceHighLow:
         return LocaleKeys.sortPriceHighLow.tr;
-      case ProductSortOption.rating:
-        return LocaleKeys.sortRating.tr;
+      case ProductSortOption.nameAsc:
+        return LocaleKeys.sortNameAsc.tr;
       default:
         return '';
     }
@@ -285,12 +281,6 @@ class _ActiveFilterChips extends StatelessWidget {
               label:
                   '\$${filter.minPrice?.toInt() ?? 0} – \$${filter.maxPrice?.toInt() ?? '∞'}',
               onRemove: onRemovePrice,
-            ),
-          if (filter.minRating != null)
-            _FilterChip(
-              label:
-                  '${filter.minRating!.toInt()}★ ${LocaleKeys.andAbove.tr}',
-              onRemove: onRemoveRating,
             ),
         ],
       ),

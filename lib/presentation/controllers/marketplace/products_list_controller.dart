@@ -1,52 +1,11 @@
 import 'package:get/get.dart';
 import '../../../core/bases/base_state_controller.dart';
+import '../../../domain/entities/marketplace/product_filter.dart';
 import '../../../domain/usecases/marketplace/product/get_products_use_case.dart';
 import '../../../domain/usecases/marketplace/product/search_products_use_case.dart';
 
-/// Sort options for the products list
-enum ProductSortOption {
-  relevance,
-  priceLowHigh,
-  priceHighLow,
-  rating,
-}
+export '../../../domain/entities/marketplace/product_filter.dart';
 
-/// Active filter state
-class ProductFilter {
-  final ProductSortOption sort;
-  final double? minPrice;
-  final double? maxPrice;
-  final double? minRating;
-
-  const ProductFilter({
-    this.sort = ProductSortOption.relevance,
-    this.minPrice,
-    this.maxPrice,
-    this.minRating,
-  });
-
-  bool get hasActiveFilters =>
-      sort != ProductSortOption.relevance ||
-      minPrice != null ||
-      maxPrice != null ||
-      minRating != null;
-
-  ProductFilter copyWith({
-    ProductSortOption? sort,
-    double? minPrice,
-    double? maxPrice,
-    double? minRating,
-    bool clearPriceRange = false,
-    bool clearRating = false,
-  }) {
-    return ProductFilter(
-      sort: sort ?? this.sort,
-      minPrice: clearPriceRange ? null : (minPrice ?? this.minPrice),
-      maxPrice: clearPriceRange ? null : (maxPrice ?? this.maxPrice),
-      minRating: clearRating ? null : (minRating ?? this.minRating),
-    );
-  }
-}
 
 class ProductsListController extends BaseStateController<GetProductsUseCase> {
   static const String kProducts = 'products';

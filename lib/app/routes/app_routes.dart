@@ -16,6 +16,7 @@ abstract class Routes {
   static const MARKETPLACE_PRODUCT = '/marketplace/product';
   // Products list — handles both "See All" and category-filtered views
   static const String MARKETPLACE_PRODUCTS_LIST = '/marketplace/products-list';
+  static const String MARKETPLACE_SEARCH = '/marketplace/search';
   static const MARKETPLACE_REVIEWS = '/marketplace/reviews';
   static const MARKETPLACE_PRODUCT_SELLERS = '/marketplace/product-sellers';
 
