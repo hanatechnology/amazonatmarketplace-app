@@ -18,8 +18,12 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    id("com.android.application") version "8.7.3" apply false
+    // 8.9.1+ is required by the AndroidX versions Firebase pulls in
+    // (androidx.core 1.17, androidx.browser 1.9).
+    id("com.android.application") version "8.9.1" apply false
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+    // Reads android/app/google-services.json so Firebase can resolve this app.
+    id("com.google.gms.google-services") version "4.4.2" apply false
 }
 
 include(":app")

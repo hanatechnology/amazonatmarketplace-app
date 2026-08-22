@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import 'data/services/push_notification_service.dart';
 import 'data/services/storage_service.dart';
 import 'core/network/dio_client.dart';
 import 'core/theme/marketplace_theme.dart';
@@ -12,6 +13,9 @@ import 'app/bindings/initial_binding.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
+  // Registers the background handler and stream listeners. Never throws — a
+  // Firebase problem must not stop the app from opening.
+  await PushNotificationService.instance.init();
   runApp(const MarketplaceApp());
 }
 
