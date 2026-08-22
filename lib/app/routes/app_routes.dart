@@ -28,6 +28,7 @@ abstract class Routes {
   static const MARKETPLACE_ORDER_CONFIRMED = '/marketplace/order-confirmed';
   static const MARKETPLACE_PAYMENT_WEBVIEW = '/marketplace/payment-webview';
   static const MARKETPLACE_ORDER_CANCELLED = '/marketplace/order-cancelled';
+  static const MARKETPLACE_EDFALI_CONFIRM = '/marketplace/edfali-confirm';
 
   // ── Orders ────────────────────────────────────────────────
   static const MARKETPLACE_ORDERS = '/marketplace/orders';
@@ -35,6 +36,12 @@ abstract class Routes {
   static const MARKETPLACE_TRACKING = '/marketplace/tracking';
   static const MARKETPLACE_RETURN = '/marketplace/return';
   static const MARKETPLACE_PICKUP = '/marketplace/pickup';
+
+  // ── Refunds ───────────────────────────────────────────────
+  static const MARKETPLACE_REFUND_REQUEST = '/marketplace/refund-request';
+
+  // ── Notifications ─────────────────────────────────────────
+  static const MARKETPLACE_NOTIFICATIONS = '/marketplace/notifications';
 
   // ── Account ───────────────────────────────────────────────
   static const MARKETPLACE_ADDRESSES = '/marketplace/addresses';

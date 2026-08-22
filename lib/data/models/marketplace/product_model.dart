@@ -60,6 +60,42 @@ class ProductModel {
     );
   }
 
+  /// `GET /stores/{id}/products` returns a different shape from `/products`:
+  /// images are objects rather than URLs, and the vendor block is absent
+  /// because the caller already knows which store it asked about.
+  factory ProductModel.fromStoreJson(
+    Map<String, dynamic> json, {
+    required String storeName,
+  }) {
+    final images = (json['images'] as List<dynamic>? ?? const [])
+        .cast<Map<String, dynamic>>();
+    final primary = images.firstWhere(
+      (image) => image['is_primary'] == true,
+      orElse: () => images.isEmpty ? const {} : images.first,
+    );
+
+    return ProductModel(
+      id: json['id'].toString(),
+      nameAr: json['name_ar'] as String? ?? '',
+      nameEn: json['name_en'] as String? ?? '',
+      // The caller already resolved the store's name for the active locale, so
+      // both language slots carry the same value.
+      vendorNameAr: storeName,
+      vendorNameEn: storeName,
+      vendorId: json['vendor_id']?.toString() ?? '',
+      price: json['base_price']?.toString() ?? '0',
+      rating: 0,
+      imageUrl: primary['image_url'] as String? ?? '',
+      imageUrls: images
+          .map((image) => image['image_url'] as String? ?? '')
+          .where((url) => url.isNotEmpty)
+          .toList(),
+      descriptionAr: json['description_ar'] as String? ?? '',
+      descriptionEn: json['description_en'] as String? ?? '',
+      categoryId: json['category_id']?.toString() ?? '',
+    );
+  }
+
   ProductEntity toEntity() {
     return ProductEntity(
       id: id,

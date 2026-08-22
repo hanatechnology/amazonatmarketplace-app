@@ -38,12 +38,19 @@ import '../../presentation/pages/marketplace/cart/bindings/cart_binding.dart';
 import '../../presentation/pages/marketplace/cart/bindings/checkout_binding.dart';
 import '../../presentation/pages/marketplace/cart/bindings/payment_webview_binding.dart';
 import '../../presentation/pages/marketplace/orders/bindings/orders_binding.dart';
+import '../../presentation/pages/marketplace/orders/bindings/order_details_binding.dart';
+import '../../presentation/pages/marketplace/refunds/refund_request_page.dart';
+import '../../presentation/pages/marketplace/refunds/bindings/refund_request_binding.dart';
+import '../../presentation/pages/marketplace/cart/edfali_confirm_page.dart';
+import '../../presentation/pages/marketplace/cart/bindings/edfali_confirm_binding.dart';
 import '../../presentation/pages/marketplace/seller/bindings/seller_binding.dart';
 import '../../presentation/pages/marketplace/account/bindings/account_binding.dart';
 import '../../presentation/pages/marketplace/account/bindings/addresses_binding.dart';
 import '../../presentation/pages/marketplace/account/bindings/add_edit_address_binding.dart';
 import '../../presentation/pages/marketplace/product/bindings/product_binding.dart';
 import '../../presentation/pages/marketplace/bindings/main_navigation_binding.dart';
+import '../../presentation/pages/marketplace/notifications/notifications_page.dart';
+import '../../presentation/pages/marketplace/notifications/bindings/notifications_binding.dart';
 
 abstract class AppPages {
   static final routes = [
@@ -135,6 +142,11 @@ abstract class AppPages {
       page: () => const OrderCancelledPage(),
     ),
     GetPage(
+      name: Routes.MARKETPLACE_EDFALI_CONFIRM,
+      page: () => const EdfaliConfirmPage(),
+      binding: EdfaliConfirmBinding(),
+    ),
+    GetPage(
       name: Routes.MARKETPLACE_ORDERS,
       page: () => const MyOrdersPage(),
       binding: OrdersBinding(),
@@ -142,7 +154,7 @@ abstract class AppPages {
     GetPage(
       name: Routes.MARKETPLACE_ORDER_DETAILS,
       page: () => const OrderDetailsPage(),
-      binding: OrdersBinding(),
+      binding: OrderDetailsBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_TRACKING,
@@ -158,6 +170,17 @@ abstract class AppPages {
       name: Routes.MARKETPLACE_PICKUP,
       page: () => const PickupPage(),
       binding: OrdersBinding(),
+    ),
+    GetPage(
+      name: Routes.MARKETPLACE_REFUND_REQUEST,
+      page: () => const RefundRequestPage(),
+      binding: RefundRequestBinding(),
+    ),
+    GetPage(
+      name: Routes.MARKETPLACE_NOTIFICATIONS,
+      page: () => const NotificationsPage(),
+      binding: NotificationsBinding(),
+      transition: Transition.rightToLeft,
     ),
     GetPage(
       name: Routes.MARKETPLACE_ADDRESSES,

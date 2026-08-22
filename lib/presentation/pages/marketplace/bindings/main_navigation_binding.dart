@@ -20,7 +20,16 @@ import '../../../../domain/usecases/marketplace/product/get_products_use_case.da
 import '../../../../domain/usecases/marketplace/seller/get_sellers_use_case.dart';
 import '../../../../domain/usecases/marketplace/order/get_orders_use_case.dart';
 import '../../../../data/repositories/checkout_repository.dart';
+import '../../../../data/repositories/notification_repository.dart';
+import '../../../../domain/usecases/marketplace/notification/get_unread_count_use_case.dart';
+import '../../../controllers/marketplace/notification_badge_controller.dart';
+import '../../../../data/repositories/banner_repository.dart';
+import '../../../../domain/usecases/marketplace/banner/get_banners_use_case.dart';
+import '../../../controllers/marketplace/profile_controller.dart';
+import '../../../controllers/marketplace/sellers_controller.dart';
 import '../../../../domain/usecases/marketplace/cart/checkout_use_case.dart';
+import '../../../../domain/usecases/marketplace/cart/get_payment_methods_use_case.dart';
+import '../../../../domain/usecases/marketplace/cart/get_shipping_fee_use_case.dart';
 
 class MainNavigationBinding extends Bindings {
   @override
@@ -29,16 +38,24 @@ class MainNavigationBinding extends Bindings {
 
     // Repositories — fenix: true so they persist across tab switches
     Get.lazyPut(() => ProductRepository(Get.find<ApiService>()), fenix: true);
+    Get.lazyPut(() => BannerRepository(Get.find<ApiService>()), fenix: true);
     Get.lazyPut(() => SellerRepository(Get.find<ApiService>()), fenix: true);
     Get.lazyPut(() => MarketplaceOrderRepository(Get.find<ApiService>()),
         fenix: true);
     Get.lazyPut(() => CheckoutRepository(Get.find<ApiService>()), fenix: true);
+    Get.lazyPut(() => NotificationRepository(Get.find<ApiService>()),
+        fenix: true);
 
     // Product / seller / order use cases
     Get.lazyPut(() => GetProductsUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetSellersUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetOrdersUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetCategoriesUseCase(Get.find()), fenix: true);
+    Get.lazyPut(() => GetBannersUseCase(Get.find()), fenix: true);
+
+    // Unread badge on the home header — count only, never the full list.
+    Get.lazyPut(() => GetUnreadCountUseCase(Get.find()), fenix: true);
+    Get.lazyPut(() => NotificationBadgeController(), fenix: true);
 
     // Local cart use cases (LocalCartRepository is permanent from InitialBinding)
     Get.lazyPut(() => GetLocalCartUseCase(Get.find()), fenix: true);
@@ -49,10 +66,14 @@ class MainNavigationBinding extends Bindings {
     Get.lazyPut(() => SetLocalCartSelectAllUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => ClearLocalCartUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => CheckoutUseCase(Get.find()), fenix: true);
+    Get.lazyPut(() => GetPaymentMethodsUseCase(Get.find()), fenix: true);
+    Get.lazyPut(() => GetShippingFeeUseCase(Get.find()), fenix: true);
 
     // Controllers
     Get.lazyPut(() => HomeController(), fenix: true);
     Get.lazyPut(() => CartController(), fenix: true);
     Get.lazyPut(() => CategoryController(), fenix: true);
+    Get.lazyPut(() => SellersController(), fenix: true);
+    Get.lazyPut(() => ProfileController(), fenix: true);
   }
 }
