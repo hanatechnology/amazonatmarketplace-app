@@ -106,7 +106,19 @@ class CartController extends GetxController {
   void checkout() {
     if (!hasSelection) return;
 
+    // `POST /orders/checkout` accepts one vendor per order, so a selection
+    // spanning several sellers has to be narrowed before continuing.
+    final vendorIds = selectedItems.map((i) => i.sellerId).toSet();
+    if (vendorIds.length > 1) {
+      Get.snackbar(
+        LocaleKeys.error.tr,
+        LocaleKeys.singleSellerCheckout.tr,
+      );
+      return;
+    }
+
     final args = CheckoutArgs(
+      vendorId: vendorIds.first,
       items: selectedItems
           .map((i) => (
                 productId: i.productId,

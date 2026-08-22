@@ -1,47 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../../localization/locale_keys.dart';
+import '../../../../domain/entities/marketplace/order_entity.dart';
 import '../../../theme/marketplace_colors.dart';
 import '../../../theme/marketplace_typography.dart';
 import '../../../theme/marketplace_spacing.dart';
 import '../../../theme/marketplace_radius.dart';
 
-/// All supported payment methods.
-enum CheckoutPaymentMethod {
-  payOnDelivery,
-  sadad,
-  paypal,
-  stripe,
-  plutu;
-
-  String get apiValue => switch (this) {
-        payOnDelivery => 'PAY_ON_DELIVERY',
-        sadad => 'SADAD',
-        paypal => 'PAYPAL',
-        stripe => 'STRIPE',
-        plutu => 'PLUTU',
-      };
-
+/// Presentation helpers for the API's payment methods.
+///
+/// The list of usable methods comes from `GET /orders/payment-methods`; this
+/// only decides how each one looks.
+extension PaymentMethodDisplay on PaymentMethod {
+  /// Brand names are shown as-is; only the delivery option reads as a phrase
+  /// and gets a localized label.
   String get displayName => switch (this) {
-        payOnDelivery => 'Cash on Delivery',
-        sadad => 'SADAD',
-        paypal => 'PayPal',
-        stripe => 'Stripe',
-        plutu => 'PLUTU',
+        PaymentMethod.payOnDelivery => LocaleKeys.statusCod.tr,
+        PaymentMethod.sadad => 'Sadad',
+        PaymentMethod.paypal => 'PayPal',
+        PaymentMethod.stripe => 'Stripe',
+        PaymentMethod.plutu => 'Plutu',
+        PaymentMethod.edfali => 'Edfali',
+        PaymentMethod.unknown => LocaleKeys.statusUnknown.tr,
       };
 
   IconData get icon => switch (this) {
-        payOnDelivery => Icons.local_shipping_outlined,
-        sadad => Icons.account_balance_outlined,
-        paypal => Icons.payment_outlined,
-        stripe => Icons.credit_card_outlined,
-        plutu => Icons.account_balance_wallet_outlined,
-      };
-
-  bool get requiresWebView => switch (this) {
-        paypal => true,
-        stripe => true,
-        plutu => true,
-        sadad => true,
-        _ => false,
+        PaymentMethod.payOnDelivery => Icons.local_shipping_outlined,
+        PaymentMethod.sadad => Icons.account_balance_outlined,
+        PaymentMethod.paypal => Icons.payment_outlined,
+        PaymentMethod.stripe => Icons.credit_card_outlined,
+        PaymentMethod.plutu => Icons.account_balance_wallet_outlined,
+        PaymentMethod.edfali => Icons.sms_outlined,
+        PaymentMethod.unknown => Icons.payment_outlined,
       };
 }
 
@@ -54,7 +44,7 @@ class CheckoutPaymentCard extends StatelessWidget {
     required this.onTap,
   });
 
-  final CheckoutPaymentMethod method;
+  final PaymentMethod method;
   final bool isSelected;
   final VoidCallback onTap;
 

@@ -3,14 +3,18 @@ import 'package:get/get.dart';
 import 'package:marketplace/app/routes/app_routes.dart';
 import 'package:marketplace/core/localization/locale_keys.dart';
 import 'package:marketplace/core/components/marketplace/checkout/checkout_address_card.dart';
-import 'package:marketplace/core/components/marketplace/checkout/checkout_payment_card.dart';
 import 'package:marketplace/data/models/marketplace/checkout_request.dart';
 import 'package:marketplace/domain/entities/marketplace/address_entity.dart';
 import 'package:marketplace/domain/entities/marketplace/checkout_args.dart';
 import 'package:marketplace/domain/entities/marketplace/order_summary_entity.dart';
 import 'package:marketplace/domain/entities/marketplace/payment_initiation_entity.dart';
 import 'package:marketplace/domain/usecases/marketplace/address/get_addresses_use_case.dart';
+import 'package:marketplace/domain/entities/marketplace/order_entity.dart';
+import 'package:marketplace/domain/entities/marketplace/shipping_fee_entity.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/checkout_use_case.dart';
+import 'package:marketplace/domain/usecases/marketplace/cart/get_payment_methods_use_case.dart';
+import 'package:marketplace/domain/usecases/marketplace/cart/get_shipping_fee_use_case.dart';
+import 'edfali_confirm_controller.dart';
 import 'payment_webview_controller.dart';
 
 class CheckoutController extends GetxController {
@@ -22,7 +26,13 @@ class CheckoutController extends GetxController {
   late final CheckoutArgs checkoutArgs;
   final addresses          = <CheckoutAddressDto>[].obs;
   final selectedAddressId  = Rx<String?>(null);
-  final selectedPayment    = Rx<CheckoutPaymentMethod?>(null);
+  final selectedPayment    = Rx<PaymentMethod?>(null);
+  final paymentMethods     = <PaymentMethod>[].obs;
+  final shippingFee        = Rx<ShippingFeeEntity?>(null);
+  final edfaliMobile       = TextEditingController();
+  final edfaliMobileError  = RxnString();
+  final isLoadingMethods   = false.obs;
+  final isLoadingShipping  = false.obs;
   final isLoadingAddresses = false.obs;
   final isCheckingOut      = false.obs;
   final isSummaryExpanded  = false.obs;
@@ -33,7 +43,12 @@ class CheckoutController extends GetxController {
   bool get canPlaceOrder =>
       selectedAddressId.value != null && selectedPayment.value != null;
 
-  double get total => checkoutArgs.total;
+  /// Items minus discount, plus whatever delivery costs once an address is
+  /// picked. The fee is only known after the preview call returns.
+  double get total => checkoutArgs.total + (shippingFee.value?.chargeable ?? 0);
+
+  bool get requiresEdfaliMobile =>
+      selectedPayment.value == PaymentMethod.edfali;
 
   // ── Lifecycle ─────────────────────────────────────────────
   @override
@@ -43,17 +58,60 @@ class CheckoutController extends GetxController {
     _getAddressesUseCase = Get.find<GetAddressesUseCase>();
     checkoutArgs         = Get.arguments as CheckoutArgs;
     _loadAddresses();
+    _loadPaymentMethods();
+  }
+
+  @override
+  void onClose() {
+    edfaliMobile.dispose();
+    super.onClose();
   }
 
   // ── Actions ───────────────────────────────────────────────
   void selectAddress(String id) {
     selectedAddressId.value = id;
     addressError.value = false;
+    _loadShippingFee();
   }
 
-  void selectPaymentMethod(CheckoutPaymentMethod method) {
+  void selectPaymentMethod(PaymentMethod method) {
     selectedPayment.value = method;
     paymentError.value = false;
+    if (method != PaymentMethod.edfali) edfaliMobileError.value = null;
+  }
+
+  /// `GET /orders/payment-methods` — render the payment step from this list
+  /// rather than a hardcoded enum, or the app offers options that fail.
+  Future<void> _loadPaymentMethods() async {
+    isLoadingMethods.value = true;
+    final state = await Get.find<GetPaymentMethodsUseCase>().execute();
+    state.maybeWhen(
+      onSuccess: (methods, _) {
+        paymentMethods.assignAll(methods);
+        if (methods.length == 1) selectedPayment.value = methods.first;
+      },
+    );
+    isLoadingMethods.value = false;
+  }
+
+  /// Previews delivery for the chosen address. A failure leaves the fee unknown
+  /// rather than guessing zero — the server prices the order either way.
+  Future<void> _loadShippingFee() async {
+    final addressId = selectedAddressId.value;
+    if (addressId == null) return;
+
+    isLoadingShipping.value = true;
+    final state = await Get.find<GetShippingFeeUseCase>().call(
+      ShippingFeeInput(
+        vendorId: checkoutArgs.vendorId,
+        addressId: addressId,
+      ),
+    );
+    state.maybeWhen(
+      onSuccess: (fee, _) => shippingFee.value = fee,
+      onError: (_, __) => shippingFee.value = null,
+    );
+    isLoadingShipping.value = false;
   }
 
   void toggleSummary() => isSummaryExpanded.toggle();
@@ -84,6 +142,12 @@ class CheckoutController extends GetxController {
       paymentError.value = true;
       valid = false;
     }
+    if (requiresEdfaliMobile && edfaliMobile.text.trim().isEmpty) {
+      // The API requires the wallet for EDFALI and never falls back to the
+      // account phone, so it has to be collected and shown before submitting.
+      edfaliMobileError.value = LocaleKeys.fieldRequired.tr;
+      valid = false;
+    }
     if (!valid) return;
 
     isCheckingOut.value = true;
@@ -96,7 +160,9 @@ class CheckoutController extends GetxController {
               ))
           .toList(),
       addressId: selectedAddressId.value!,
-      paymentMethod: selectedPayment.value!.apiValue,
+      paymentMethod: _wireValue(selectedPayment.value!),
+      edfaliMobile:
+          requiresEdfaliMobile ? edfaliMobile.text.trim() : null,
     );
 
     final result = await _checkoutUseCase(request);
@@ -107,7 +173,20 @@ class CheckoutController extends GetxController {
       onSuccess: (data, _) async {
         isCheckingOut.value = false;
         final paymentInit = data.paymentInitiation;
-        if (paymentInit != null && selectedPayment.value!.requiresWebView) {
+
+        // Exactly one route applies: Edfali collects an SMS PIN, a hosted
+        // gateway opens its checkout page, cash on delivery is already done.
+        if (paymentInit != null && paymentInit.requiresOtp) {
+          Get.toNamed(
+            Routes.MARKETPLACE_EDFALI_CONFIRM,
+            arguments: EdfaliConfirmArgs(
+              orderId: data.order.id,
+              total: total,
+              otpSentTo: paymentInit.otpSentTo,
+              expiresInSeconds: paymentInit.expiresInSeconds,
+            ),
+          );
+        } else if (paymentInit != null && paymentInit.hasHostedCheckout) {
           await _openPaymentWebView(paymentInit);
         } else {
           _navigateToConfirmed(data.order);
@@ -171,7 +250,7 @@ class CheckoutController extends GetxController {
     final result = await Get.toNamed(
       Routes.MARKETPLACE_PAYMENT_WEBVIEW,
       arguments: PaymentWebViewArgs(
-        checkoutUrl: initiation.checkoutUrl,
+        checkoutUrl: initiation.checkoutUrl!,
         successUrlPattern:
             _extractPattern(initiation.successRedirectUrl) ?? 'payment/success',
         cancelUrlPattern:
@@ -199,10 +278,33 @@ class CheckoutController extends GetxController {
       arguments: OrderConfirmedArgs(
         orderId: order?.id,
         total: total,
-        paymentMethod: selectedPayment.value!.displayName,
+        paymentMethod: _displayName(selectedPayment.value!),
       ),
     );
   }
+
+  /// The API's payment methods are brand names, so they are shown as-is; only
+  /// the delivery option reads as a phrase and gets a localized label.
+  static String _displayName(PaymentMethod method) => switch (method) {
+        PaymentMethod.plutu => 'Plutu',
+        PaymentMethod.sadad => 'Sadad',
+        PaymentMethod.paypal => 'PayPal',
+        PaymentMethod.stripe => 'Stripe',
+        PaymentMethod.edfali => 'Edfali',
+        PaymentMethod.payOnDelivery => LocaleKeys.statusCod.tr,
+        PaymentMethod.unknown => LocaleKeys.statusUnknown.tr,
+      };
+
+  static String _wireValue(PaymentMethod method) => switch (method) {
+        PaymentMethod.plutu => 'PLUTU',
+        PaymentMethod.sadad => 'SADAD',
+        PaymentMethod.paypal => 'PAYPAL',
+        PaymentMethod.stripe => 'STRIPE',
+        PaymentMethod.edfali => 'EDFALI',
+        PaymentMethod.payOnDelivery => 'PAY_ON_DELIVERY',
+        // Never reachable: unrecognised methods are filtered out of the list.
+        PaymentMethod.unknown => '',
+      };
 
   String? _extractPattern(String? fullUrl) {
     if (fullUrl == null) return null;

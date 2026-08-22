@@ -4,6 +4,7 @@ import '../../theme/marketplace_typography.dart';
 import '../../theme/marketplace_spacing.dart';
 import '../../theme/marketplace_radius.dart';
 import '../../localization/locale_keys.dart';
+import '../../utils/price_formatter.dart';
 import 'package:get/get.dart';
 
 /// DTO that carries the three price values into the widget.
@@ -12,6 +13,8 @@ class CartPriceSummaryDto {
     required this.subtotal,
     required this.discount,
     required this.total,
+    this.shippingFee,
+    this.isShippingLoading = false,
   });
 
   final double subtotal;
@@ -20,6 +23,11 @@ class CartPriceSummaryDto {
   final double discount;
 
   final double total;
+
+  /// Delivery cost from `GET /orders/shipping-fee`. Null means it has not been
+  /// previewed yet — the row is hidden rather than showing a made-up zero.
+  final double? shippingFee;
+  final bool isShippingLoading;
 }
 
 /// Price summary card shown at the bottom of CartPage.
@@ -53,15 +61,24 @@ class CartPriceSummary extends StatelessWidget {
           // Subtotal
           _PriceRow(
             label: LocaleKeys.subtotal.tr,
-            value: '\$${data.subtotal.toStringAsFixed(2)}',
+            value: PriceFormatter.format(data.subtotal),
           ),
           // Discount (hidden when zero)
           if (data.discount > 0) ...[
             const SizedBox(height: MarketplaceSpacing.xs),
             _PriceRow(
               label: LocaleKeys.discount.tr,
-              value: '-\$${data.discount.toStringAsFixed(2)}',
+              value: '-${PriceFormatter.format(data.discount)}',
               valueColor: const Color(0xFFD32F2F),
+            ),
+          ],
+          if (data.isShippingLoading || data.shippingFee != null) ...[
+            const SizedBox(height: MarketplaceSpacing.xs),
+            _PriceRow(
+              label: LocaleKeys.shippingFee.tr,
+              value: data.isShippingLoading
+                  ? '…'
+                  : PriceFormatter.format(data.shippingFee!),
             ),
           ],
           const SizedBox(height: MarketplaceSpacing.sm),
@@ -70,7 +87,7 @@ class CartPriceSummary extends StatelessWidget {
           // Total
           _PriceRow(
             label: LocaleKeys.totalCost.tr,
-            value: '\$${data.total.toStringAsFixed(2)}',
+            value: PriceFormatter.format(data.total),
             isBold: true,
           ),
         ],

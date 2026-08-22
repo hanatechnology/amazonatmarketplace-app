@@ -71,9 +71,13 @@ class CheckoutPage extends GetView<CheckoutController> {
                   // ── Payment Method ────────────────────────────
                   CheckoutPaymentSection(
                     data: CheckoutPaymentSectionDto(
+                      methods: controller.paymentMethods,
                       selectedMethod: controller.selectedPayment.value,
+                      isLoading: controller.isLoadingMethods.value,
                       hasError: controller.paymentError.value,
                       onSelect: controller.selectPaymentMethod,
+                      edfaliMobileController: controller.edfaliMobile,
+                      edfaliMobileError: controller.edfaliMobileError.value,
                     ),
                   ),
                   const SizedBox(height: MarketplaceSpacing.sectionGap),
@@ -83,7 +87,10 @@ class CheckoutPage extends GetView<CheckoutController> {
                     data: CartPriceSummaryDto(
                       subtotal: args.subtotal,
                       discount: args.discount,
-                      total: args.total,
+                      // Includes delivery once an address is chosen.
+                      total: controller.total,
+                      shippingFee: controller.shippingFee.value?.chargeable,
+                      isShippingLoading: controller.isLoadingShipping.value,
                     ),
                   ),
 
