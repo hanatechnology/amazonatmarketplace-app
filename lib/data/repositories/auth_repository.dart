@@ -8,11 +8,26 @@ class AuthRepository extends BaseRepository<ApiService> {
   AuthRepository(super.service);
 
   /// Step 1 — send OTP to the given phone number.
-  Future<Result<void>> requestOtp(String phone) {
+  ///
+  /// Phone alone acts as sign-in. When the number has never been registered the
+  /// API answers `registration_required`; retrying with [firstName] and [email]
+  /// registers the customer and then sends the code. Profile fields are ignored
+  /// once they are already set on the account.
+  Future<Result<void>> requestOtp(
+    String phone, {
+    String? firstName,
+    String? lastName,
+    String? email,
+  }) {
     return post<void>(
       '/auth/request-otp',
       (_) {},
-      body: {'phone': phone},
+      body: {
+        'phone': phone,
+        if (firstName != null && firstName.isNotEmpty) 'first_name': firstName,
+        if (lastName != null && lastName.isNotEmpty) 'last_name': lastName,
+        if (email != null && email.isNotEmpty) 'email': email,
+      },
     );
   }
 

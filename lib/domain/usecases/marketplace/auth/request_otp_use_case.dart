@@ -5,5 +5,16 @@ class RequestOtpUseCase {
   RequestOtpUseCase(this._repository);
   final AuthRepository _repository;
 
-  Future<Result<void>> call(String phone) => _repository.requestOtp(phone);
+  Future<Result<void>> call(
+    String phone, {
+    String? firstName,
+    String? lastName,
+    String? email,
+  }) =>
+      _repository.requestOtp(
+        phone,
+        firstName: firstName,
+        lastName: lastName,
+        email: email,
+      );
 }

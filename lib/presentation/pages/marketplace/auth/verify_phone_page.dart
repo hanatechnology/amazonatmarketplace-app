@@ -7,6 +7,7 @@ import '../../../../core/theme/marketplace_spacing.dart';
 import '../../../../core/theme/marketplace_radius.dart';
 import '../../../../core/localization/locale_keys.dart';
 import '../../../../core/components/marketplace/marketplace_app_bar.dart';
+import '../../../../core/utils/phone_utils.dart';
 import '../../../controllers/marketplace/auth_controller.dart';
 
 class VerifyPhonePage extends GetView<AuthController> {
@@ -38,31 +39,49 @@ class VerifyPhonePage extends GetView<AuthController> {
               // ── Subtitle with phone number ──────────────
               Obx(() => Text(
                     LocaleKeys.otpSentTo.trParams({
-                      'phone': controller.phoneNumber.value,
+                      'phone': PhoneUtils.forDisplay(
+                        controller.phoneNumber.value,
+                      ),
                     }),
                     style: MarketplaceTypography.descriptionBody,
                     textAlign: TextAlign.center,
+                    textDirection: TextDirection.ltr,
                   )),
 
               const SizedBox(height: MarketplaceSpacing.xl),
 
-              // ── OTP Input Fields (6 digits) ─────────────
+              // ── OTP Input Fields ────────────────────────
+              // Six boxes at a fixed width overflow a 320 dp screen, so they
+              // share the row instead.
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: List.generate(
-                    4,
-                    (i) => SizedBox(
-                          width: 48,
+                    AuthController.otpLength,
+                    (i) => Expanded(
+                        child: Padding(
+                      padding: EdgeInsets.only(
+                        right: i == AuthController.otpLength - 1
+                            ? 0
+                            : MarketplaceSpacing.sm,
+                      ),
+                      child: SizedBox(
                           height: 56,
                           child: TextField(
                             controller: controller.otpControllers[i],
                             focusNode: controller.otpFocusNodes[i],
                             keyboardType: TextInputType.number,
                             textAlign: TextAlign.center,
-                            maxLength: 1,
+                            // No maxLength: SMS autofill delivers the whole
+                            // code into one box, and the controller spreads it
+                            // across the row.
+                            autofillHints: i == 0
+                                ? const [AutofillHints.oneTimeCode]
+                                : null,
                             style: MarketplaceTypography.sectionHeading,
                             inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(
+                                AuthController.otpLength,
+                              ),
                             ],
                             decoration: InputDecoration(
                               counterText: '',
@@ -85,7 +104,8 @@ class VerifyPhonePage extends GetView<AuthController> {
                             onChanged: (value) =>
                                 controller.onOtpChanged(i, value),
                           ),
-                        )),
+                        ),
+                    ))),
               ),
 
               // ── OTP Error ───────────────────────────────
@@ -96,7 +116,7 @@ class VerifyPhonePage extends GetView<AuthController> {
                       child: Text(
                         controller.otpError.value!,
                         style: MarketplaceTypography.micro
-                            .copyWith(color: Colors.red),
+                            .copyWith(color: MarketplaceColors.statusClosed),
                         textAlign: TextAlign.center,
                       ),
                     )
@@ -166,6 +186,21 @@ class VerifyPhonePage extends GetView<AuthController> {
                     ],
                   );
                 }),
+              ),
+
+              const SizedBox(height: MarketplaceSpacing.md),
+
+              // ── Change phone number ─────────────────────
+              Center(
+                child: TextButton(
+                  onPressed: controller.editPhone,
+                  child: Text(
+                    LocaleKeys.editPhone.tr,
+                    style: MarketplaceTypography.body.copyWith(
+                      color: MarketplaceColors.textSecondary,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

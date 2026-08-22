@@ -5,6 +5,7 @@ import '../../../../core/theme/marketplace_typography.dart';
 import '../../../../core/theme/marketplace_spacing.dart';
 import '../../../../core/theme/marketplace_radius.dart';
 import '../../../../core/localization/locale_keys.dart';
+import '../../../../core/utils/phone_utils.dart';
 import '../../../controllers/marketplace/auth_controller.dart';
 
 class MarketplaceLoginPage extends GetView<AuthController> {
@@ -96,8 +97,12 @@ class MarketplaceLoginPage extends GetView<AuthController> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Country flag / code — customize per region
-                        Text('+964 ', style: TextStyle(fontSize: 16)),
+                        // Libya — the API accepts E.164 only, and the
+                        // controller normalizes whatever is typed to +218.
+                        Text(
+                          '${PhoneUtils.countryCode} ',
+                          style: TextStyle(fontSize: 16),
+                        ),
                         SizedBox(
                           height: 24,
                           child: VerticalDivider(
@@ -111,6 +116,61 @@ class MarketplaceLoginPage extends GetView<AuthController> {
                 ),
                 onChanged: (_) => controller.phoneError.value = null,
               )),
+
+              // ── Sign-up fields (revealed on registration_required) ──
+              Obx(() {
+                if (!controller.needsRegistration.value) {
+                  return const SizedBox.shrink();
+                }
+                return Padding(
+                  padding: const EdgeInsets.only(top: MarketplaceSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        LocaleKeys.signUpPrompt.tr,
+                        style: MarketplaceTypography.descriptionBody,
+                      ),
+                      const SizedBox(height: MarketplaceSpacing.md),
+                      TextField(
+                        controller: controller.firstNameController,
+                        textInputAction: TextInputAction.next,
+                        style: MarketplaceTypography.body,
+                        decoration: InputDecoration(
+                          labelText: LocaleKeys.firstNameLabel.tr,
+                          hintText: LocaleKeys.firstNameHint.tr,
+                          errorText: controller.firstNameError.value,
+                        ),
+                        onChanged: (_) =>
+                            controller.firstNameError.value = null,
+                      ),
+                      const SizedBox(height: MarketplaceSpacing.md),
+                      TextField(
+                        controller: controller.lastNameController,
+                        textInputAction: TextInputAction.next,
+                        style: MarketplaceTypography.body,
+                        decoration: InputDecoration(
+                          labelText: LocaleKeys.lastNameOptional.tr,
+                          hintText: LocaleKeys.lastNameHint.tr,
+                        ),
+                      ),
+                      const SizedBox(height: MarketplaceSpacing.md),
+                      TextField(
+                        controller: controller.emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.done,
+                        style: MarketplaceTypography.body,
+                        decoration: InputDecoration(
+                          labelText: LocaleKeys.email.tr,
+                          hintText: LocaleKeys.emailHint.tr,
+                          errorText: controller.emailError.value,
+                        ),
+                        onChanged: (_) => controller.emailError.value = null,
+                      ),
+                    ],
+                  ),
+                );
+              }),
 
               const SizedBox(height: MarketplaceSpacing.lg),
 
@@ -132,7 +192,9 @@ class MarketplaceLoginPage extends GetView<AuthController> {
                         ),
                       )
                     : Text(
-                        LocaleKeys.sendOtp.tr,
+                        controller.needsRegistration.value
+                            ? LocaleKeys.signUp.tr
+                            : LocaleKeys.sendOtp.tr,
                         style: MarketplaceTypography.buttonLabel,
                       ),
               )),

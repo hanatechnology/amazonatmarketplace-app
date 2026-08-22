@@ -25,18 +25,22 @@ class AuthUserModel {
   final bool isActive;
   final DateTime createdAt;
 
+  /// Tolerant on purpose: the verify-otp payload documented in the OpenAPI spec
+  /// carries only id / phone / names / email / role, so anything beyond that
+  /// must be optional or a successful login would throw while parsing.
   factory AuthUserModel.fromJson(Map<String, dynamic> json) {
     return AuthUserModel(
       id: json['id'] as String,
-      phone: json['phone'] as String,
-      firstName: json['first_name'] != null ? json['first_name'] as String : null,
-      lastName: json['last_name'] != null ? json['last_name'] as String : null,
-      email: json['email'] != null ? json['email'] as String : null,
-      avatarUrl: json['avatar_url'] != null ? json['avatar_url'] as String : null,
-      role: json['role'] as String,
-      languagePreference: json['language_preference'] as String,
-      isActive: json['is_active'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      phone: json['phone'] as String? ?? '',
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
+      email: json['email'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      role: json['role'] as String? ?? 'CUSTOMER',
+      languagePreference: json['language_preference'] as String? ?? 'ar',
+      isActive: json['is_active'] as bool? ?? true,
+      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+          DateTime.now(),
     );
   }
 
@@ -67,11 +71,13 @@ class AuthResponseModel {
   final String accessToken;
   final String expiresIn;
 
+  /// `expires_in` is a duration string (`"7d"`) in the API spec but the web
+  /// client types it as a number, so accept either rather than gamble on a cast.
   factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
     return AuthResponseModel(
       user: AuthUserModel.fromJson(json['user'] as Map<String, dynamic>),
       accessToken: json['access_token'] as String,
-      expiresIn: json['expires_in'] as String,
+      expiresIn: '${json['expires_in'] ?? ''}',
     );
   }
 }
