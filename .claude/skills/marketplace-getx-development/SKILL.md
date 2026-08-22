@@ -7,6 +7,12 @@ description: Build features for the Marketplace Flutter app using GetX state man
 
 This skill enforces the exact architecture, base classes, state management, naming conventions, and design system of the `marketplace_app` project. Every new feature **must** follow these patterns — no exceptions.
 
+> **Prerequisite:** this skill covers *how* to build. Before using it, run
+> `amazonat-feature-parity` to establish *what* to build — the exact API contract
+> from the `amazonat-client` MCP spec and the shipped behavior of the web client at
+> `/Users/mac/Desktop/projects/amazonat-client-portal`. Never invent an endpoint or
+> a field; if it is not in the OAS, it does not exist.
+
 ---
 
 ## Architecture Overview
