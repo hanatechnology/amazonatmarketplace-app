@@ -16,11 +16,15 @@ class CategoryModel {
   });
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
+    // The OAS documents no response schema for /categories, so field
+    // nullability is not guaranteed by contract. A category with no icon comes
+    // back with a null icon_url, which a plain `as String` cast turns into a
+    // crash that takes down the whole home screen.
     return CategoryModel(
-      id: json['id'] as String,
-      nameAr: json['name_ar'] as String,
-      nameEn: json['name_en'] as String,
-      imageUrl: json['icon_url'] as String,
+      id: json['id']?.toString() ?? '',
+      nameAr: json['name_ar']?.toString() ?? '',
+      nameEn: json['name_en']?.toString() ?? '',
+      imageUrl: json['icon_url']?.toString() ?? '',
     );
   }
 
@@ -34,9 +38,15 @@ class CategoryModel {
   }
 
   CategoryEntity toEntity() {
+    // Fall back to the other locale's name rather than rendering an empty
+    // chip when only one translation is filled in.
+    final isArabic = Get.locale?.languageCode == 'ar';
+    final preferred = isArabic ? nameAr : nameEn;
+    final fallback = isArabic ? nameEn : nameAr;
+
     return CategoryEntity(
       id: id,
-      name: Get.locale?.languageCode == 'ar' ? nameAr : nameEn,
+      name: preferred.isNotEmpty ? preferred : fallback,
       imageUrl: imageUrl,
     );
   }
