@@ -56,7 +56,7 @@ class ProductDetailsPage extends GetView<ProductDetailsController> {
         ],
       ),
       body: Obx(() {
-        final state = controller.stateFor(ProductDetailsController.kProduct);
+        final state = controller.stateFor<ProductDetailsEntity>(ProductDetailsController.kProduct);
         return state.value.when(
           onInitial: () => const SizedBox.shrink(),
           onLoading: () => const Center(
@@ -65,7 +65,7 @@ class ProductDetailsPage extends GetView<ProductDetailsController> {
             ),
           ),
           onSuccess: (data, _) => _ProductDetailsBody(
-            product: data as ProductDetailsEntity,
+            product: data,
             controller: controller,
           ),
           onError: (message, _) => _ErrorView(
@@ -89,7 +89,7 @@ class ProductDetailsPage extends GetView<ProductDetailsController> {
 
   /// Safely extracts the loaded product from the state, or null.
   ProductDetailsEntity? _currentProduct() {
-    final state = controller.stateFor(ProductDetailsController.kProduct).value;
+    final state = controller.stateFor<ProductDetailsEntity>(ProductDetailsController.kProduct).value;
     return state.when(
       onInitial: () => null,
       onLoading: () => null,

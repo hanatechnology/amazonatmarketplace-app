@@ -92,7 +92,7 @@ class ProductsListPage extends StatelessWidget {
             // ── Results count ─────────────────────────────
             SliverToBoxAdapter(
               child: Obx(() {
-                final state = controller.stateFor(ProductsListController.kProducts);
+                final state = controller.stateFor<List<ProductEntity>>(ProductsListController.kProducts);
                 return state.value.when(
                   onInitial: () => const SizedBox.shrink(),
                   onLoading: () => const SizedBox.shrink(),
@@ -133,7 +133,7 @@ class ProductsListPage extends StatelessWidget {
 
   Widget _buildProductGrid(ProductsListController controller) {
     return Obx(() {
-      final state = controller.stateFor(ProductsListController.kProducts);
+      final state = controller.stateFor<List<ProductEntity>>(ProductsListController.kProducts);
       return state.value.when(
         onInitial: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
         onLoading: () => SliverPadding(
@@ -150,7 +150,7 @@ class ProductsListPage extends StatelessWidget {
           ),
         ),
         onSuccess: (data, _) {
-          final products = data as List<ProductEntity>;
+          final products = data;
 
           if (products.isEmpty) {
             return SliverFillRemaining(

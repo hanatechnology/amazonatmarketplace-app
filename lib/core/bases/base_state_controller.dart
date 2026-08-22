@@ -74,30 +74,26 @@ abstract class BaseStateController<U> extends GetxController {
   }
 
   /// Run multiple operations concurrently and update their states.
+  ///
+  /// Takes [StateOperation]s rather than a plain map because a
+  /// `Map<String, Function>` cannot carry a different type per entry — every
+  /// value would be seen as `dynamic`, and the first `_getOrCreate` call would
+  /// pin that key's `Rx` to `AppState<dynamic>` for the lifetime of the
+  /// controller. Any later typed read then fails an invariant cast. Each
+  /// operation carries its own `T` and applies it through a virtual call, so
+  /// the type survives.
   Future<void> handleMultipleStates(
-    Map<String, Future<AppState<dynamic>> Function()> operations, {
+    List<StateOperation> operations, {
     void Function()? onAllSuccess,
   }) async {
-    // Set all to loading
-    for (final key in operations.keys) {
-      _getOrCreate(key).value = const AppStateLoading();
+    for (final op in operations) {
+      op.setLoading(this);
     }
 
-    // Run all concurrently
-    final futures = operations.entries.map((e) async {
-      try {
-        final result = await e.value();
-        _getOrCreate(e.key).value = result;
-      } catch (err) {
-        final message = err is AppException ? err.message : err.toString();
-        _getOrCreate(e.key).value = AppStateError(message);
-      }
-    });
+    await Future.wait(operations.map((op) => op.run(this)));
 
-    await Future.wait(futures);
-
-    final allSuccess = operations.keys.every(
-      (k) => _states[k]?.value.isSuccess ?? false,
+    final allSuccess = operations.every(
+      (op) => _states[op.key]?.value.isSuccess ?? false,
     );
     if (allSuccess) onAllSuccess?.call();
   }
@@ -160,4 +156,28 @@ abstract class BaseStateController<U> extends GetxController {
         onSuccess: (data) => AppStateSuccess(data, message: successMessage),
         onFailure: (e) => AppStateError(e.message),
       );
+}
+
+/// One keyed operation for [BaseStateController.handleMultipleStates].
+///
+/// Exists to keep `T` attached to its key. The methods are generic over the
+/// instance's own `T`, so calling them through a `List<StateOperation>` still
+/// creates correctly-typed states.
+class StateOperation<T> {
+  const StateOperation(this.key, this.operation);
+
+  final String key;
+  final Future<AppState<T>> Function() operation;
+
+  void setLoading(BaseStateController controller) =>
+      controller.stateFor<T>(key).value = AppStateLoading<T>();
+
+  Future<void> run(BaseStateController controller) async {
+    try {
+      controller.stateFor<T>(key).value = await operation();
+    } catch (e) {
+      final message = e is AppException ? e.message : e.toString();
+      controller.stateFor<T>(key).value = AppStateError<T>(message);
+    }
+  }
 }

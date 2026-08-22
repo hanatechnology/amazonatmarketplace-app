@@ -34,7 +34,7 @@ class CategoryPage extends StatelessWidget {
         onRefresh: controller.refreshCategory,
         color: MarketplaceColors.primary,
         child: Obx(() {
-          final state = controller.stateFor(kCategoryProducts);
+          final state = controller.stateFor<List<CategoryEntity>>(kCategoryProducts);
           return state.value.when(
             onInitial: () => const SizedBox.shrink(),
             onLoading: () => GridView.builder(
@@ -49,7 +49,7 @@ class CategoryPage extends StatelessWidget {
               itemBuilder: (_, __) => const CategoryChipShimmer(),
             ),
             onSuccess: (data, _) {
-              final categories = data as List<CategoryEntity>;
+              final categories = data;
               return GridView.builder(
                 padding: const EdgeInsets.all(MarketplaceSpacing.screenPaddingH),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

@@ -209,7 +209,7 @@ class _HomePageState extends State<HomePage> {
   /// Categories horizontal list with StateBuilder
   Widget _buildCategoryList() {
     return Obx(() {
-      final state = controller.stateFor(HomeController.kCategories);
+      final state = controller.stateFor<List<CategoryEntity>>(HomeController.kCategories);
       return state.value.when(
         onInitial: () => const SizedBox.shrink(),
         onLoading: () => ListView.separated(
@@ -223,7 +223,7 @@ class _HomePageState extends State<HomePage> {
           itemBuilder: (_, __) => const CategoryChipShimmer(),
         ),
         onSuccess: (data, _) {
-          final categories = data as List<CategoryEntity>;
+          final categories = data;
           return ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(
@@ -259,7 +259,7 @@ class _HomePageState extends State<HomePage> {
   /// Products grid with StateBuilder
   Widget _buildProductGrid() {
     return Obx(() {
-      final state = controller.stateFor(HomeController.kProducts);
+      final state = controller.stateFor<List<ProductEntity>>(HomeController.kProducts);
       return state.value.when(
         onInitial: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
         onLoading: () => SliverPadding(
@@ -276,7 +276,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         onSuccess: (data, _) {
-          final products = data as List<ProductEntity>;
+          final products = data;
           return SliverPadding(
             padding: const EdgeInsets.symmetric(
               horizontal: MarketplaceSpacing.screenPaddingH,

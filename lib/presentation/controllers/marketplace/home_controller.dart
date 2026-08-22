@@ -3,6 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/bases/base_state_controller.dart';
 import '../../../domain/entities/marketplace/banner_entity.dart';
+import '../../../domain/entities/marketplace/category_entity.dart';
+import '../../../domain/entities/marketplace/product_entity.dart';
 import '../../../domain/usecases/marketplace/banner/get_banners_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_products_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_categories_use_case.dart';
@@ -31,11 +33,17 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
 
   /// Load banners + categories + products in parallel
   Future<void> loadHomeData() async {
-    await handleMultipleStates({
-      kBanners: () => Get.find<GetBannersUseCase>().execute(),
-      kCategories: () => Get.find<GetCategoriesUseCase>().execute(),
-      kProducts: () => useCase.execute(),
-    });
+    await handleMultipleStates([
+      StateOperation<List<BannerEntity>>(
+        kBanners,
+        () => Get.find<GetBannersUseCase>().execute(),
+      ),
+      StateOperation<List<CategoryEntity>>(
+        kCategories,
+        () => Get.find<GetCategoriesUseCase>().execute(),
+      ),
+      StateOperation<List<ProductEntity>>(kProducts, () => useCase.execute()),
+    ]);
   }
 
   /// A PRODUCT banner opens the product; an IMAGE_LINK banner opens its URL
