@@ -35,6 +35,16 @@ abstract class LocaleKeys {
   static const String privacyPolicy = 'privacy_policy';
   static const String and = 'and';
 
+  // ── Registration (revealed when the phone has no account) ─
+  static const String noAccountFound   = 'no_account_found';
+  static const String signUpPrompt     = 'sign_up_prompt';
+  static const String signUp           = 'sign_up';
+  static const String firstNameLabel   = 'first_name_label';
+  static const String firstNameHint    = 'first_name_hint';
+  static const String lastNameLabel    = 'last_name_label';
+  static const String lastNameHint     = 'last_name_hint';
+  static const String lastNameOptional = 'last_name_optional';
+
   // ── OTP / Verification ─────────────────────────────────
   static const String verifyPhoneTitle = 'verify_phone_title';
   static const String verifyPhoneSubtitle = 'verify_phone_subtitle';
@@ -44,6 +54,9 @@ abstract class LocaleKeys {
   static const String resendOtp = 'resend_otp';
   static const String resendIn = 'resend_in';
   static const String didntReceiveCode = 'didnt_receive_code';
+  static const String editPhone = 'edit_phone';
+  static const String otpRateLimited = 'otp_rate_limited';
+  static const String otpTooManyAttempts = 'otp_too_many_attempts';
 
   // ── Complete Details ────────────────────────────────────
   static const String completeDetailsTitle = 'complete_details_title';
@@ -131,9 +144,41 @@ abstract class LocaleKeys {
   static const String returnOrder = 'return_order';
   static const String pickup = 'pickup';
   static const String noOrders = 'no_orders';
+  static const String noOrdersDesc = 'no_orders_desc';
+  static const String orderNumber = 'order_number';
+  static const String viewDetails = 'view_details';
+  static const String orderItems = 'order_items';
+  static const String shippingFee = 'shipping_fee';
+  static const String totalAmount = 'total_amount';
+  static const String vendor = 'vendor';
+  static const String shippingAddress = 'shipping_address';
+  static const String cancelOrder = 'cancel_order';
+  static const String cancelOrderConfirm = 'cancel_order_confirm';
+  static const String cancelOrderReasonHint = 'cancel_order_reason_hint';
+  static const String orderCancelled = 'order_cancelled';
+  static const String orderCancelledMessage = 'order_cancelled_message';
+  static const String orderPlacedOn = 'order_placed_on';
+  static const String cancellationReason = 'cancellation_reason';
+  static const String statusPending = 'status_pending';
+  static const String statusPaid = 'status_paid';
+  static const String statusCod = 'status_cod';
+  static const String statusProcessing = 'status_processing';
+  static const String statusShipped = 'status_shipped';
+  static const String statusReadyForPickup = 'status_ready_for_pickup';
+  static const String statusDelivered = 'status_delivered';
+  static const String statusCancelled = 'status_cancelled';
+  static const String statusRefunded = 'status_refunded';
+  static const String statusUnknown = 'status_unknown';
 
   // ── Seller ──────────────────────────────────────────────
   static const String sellers = 'sellers';
+  static const String viewStore = 'view_store';
+  static const String storeProducts = 'store_products';
+  static const String noStoreProducts = 'no_store_products';
+  static const String searchSellers = 'search_sellers';
+  static const String noSellers = 'no_sellers';
+  static const String noSellersMessage = 'no_sellers_message';
+  static const String verified = 'verified';
   static const String follow = 'follow';
   static const String following = 'following';
   static const String followers = 'followers';
@@ -148,8 +193,61 @@ abstract class LocaleKeys {
   static const String deliveryAreas = 'delivery_areas';
   static const String helpCenter = 'help_center';
   static const String language = 'language';
+  static const String arabic = 'arabic';
+  static const String english = 'english';
   static const String logout = 'logout';
   static const String logoutConfirm = 'logout_confirm';
+
+  // ── Refunds ─────────────────────────────────────────────
+  static const String requestRefund = 'request_refund';
+  static const String refundType = 'refund_type';
+  static const String refundTypeFull = 'refund_type_full';
+  static const String refundTypePartial = 'refund_type_partial';
+  static const String refundReason = 'refund_reason';
+  static const String refundReasonHint = 'refund_reason_hint';
+  static const String refundExplanation = 'refund_explanation';
+  static const String selectItems = 'select_items';
+  static const String selectAtLeastOneItem = 'select_at_least_one_item';
+  static const String payoutMethod = 'payout_method';
+  static const String submitRefund = 'submit_refund';
+  static const String refundRequested = 'refund_requested';
+  static const String refundRequestedMessage = 'refund_requested_message';
+  static const String fieldRequired = 'field_required';
+  static const String fieldInvalid = 'field_invalid';
+  static const String refundTracker = 'refund_tracker';
+  static const String refundAmount = 'refund_amount';
+  static const String refundRequestedAt = 'refund_requested_at';
+  static const String refundCompletedAt = 'refund_completed_at';
+  static const String transportCost = 'transport_cost';
+  static const String declineReason = 'decline_reason';
+  static const String payouts = 'payouts';
+  static const String pickupSchedule = 'pickup_schedule';
+  static const String refundStatusPending = 'refund_status_pending';
+  static const String refundStatusUnderProcessing = 'refund_status_under_processing';
+  static const String refundStatusUnderReview = 'refund_status_under_review';
+  static const String refundStatusAwaitingPayout = 'refund_status_awaiting_payout';
+  static const String refundStatusRejected = 'refund_status_rejected';
+  static const String refundStatusRefunded = 'refund_status_refunded';
+  static const String payoutStatusPending = 'payout_status_pending';
+  static const String payoutStatusProcessing = 'payout_status_processing';
+  static const String payoutStatusApproved = 'payout_status_approved';
+  static const String payoutStatusCompleted = 'payout_status_completed';
+  static const String payoutStatusDeclined = 'payout_status_declined';
+
+  // ── Edfali payment ──────────────────────────────────────
+  static const String edfaliWallet = 'edfali_wallet';
+  static const String edfaliWalletHint = 'edfali_wallet_hint';
+  static const String edfaliConfirmTitle = 'edfali_confirm_title';
+  static const String edfaliCodeSentTo = 'edfali_code_sent_to';
+  static const String edfaliAttemptsRemaining = 'edfali_attempts_remaining';
+  static const String edfaliOtpInvalid = 'edfali_otp_invalid';
+  static const String edfaliAttemptsExceeded = 'edfali_attempts_exceeded';
+  static const String edfaliSessionExpired = 'edfali_session_expired';
+  static const String edfaliPaymentFailed = 'edfali_payment_failed';
+  static const String paymentUnderReview = 'payment_under_review';
+  static const String paymentUnderReviewMessage = 'payment_under_review_message';
+  static const String confirmPayment = 'confirm_payment';
+  static const String singleSellerCheckout = 'single_seller_checkout';
 
   // ── Bottom Nav ──────────────────────────────────────────
   static const String navHome = 'nav_home';
@@ -215,6 +313,27 @@ abstract class LocaleKeys {
   static const String labelRequired        = 'label_required';
   static const String addressRequired      = 'address_required';
   static const String deleted              = 'deleted';
+
+  // ── Notifications ───────────────────────────────────────
+  static const String notifications              = 'notifications';
+  static const String notificationsDescription   = 'notifications_description';
+  static const String notificationsAll           = 'notifications_all';
+  static const String notificationsUnread        = 'notifications_unread';
+  static const String notificationsRead          = 'notifications_read';
+  static const String markRead                   = 'mark_read';
+  static const String markAllRead                = 'mark_all_read';
+  static const String noNotifications            = 'no_notifications';
+  static const String noNotificationsMessage     = 'no_notifications_message';
+  static const String allNotificationsMarkedRead = 'all_notifications_marked_read';
+
+  // ── Relative Time ───────────────────────────────────────
+  static const String timeJustNow    = 'time_just_now';
+  static const String timeMinutesAgo = 'time_minutes_ago';
+  static const String timeHoursAgo   = 'time_hours_ago';
+  static const String timeDaysAgo    = 'time_days_ago';
+  static const String timeWeeksAgo   = 'time_weeks_ago';
+  static const String timeMonthsAgo  = 'time_months_ago';
+  static const String timeYearsAgo   = 'time_years_ago';
 
   // ── Validation ──────────────────────────────────────────
   static const String requiredField = 'required_field';

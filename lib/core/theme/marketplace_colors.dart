@@ -67,4 +67,24 @@ abstract class MarketplaceColors {
 
   /// Pure white — backgrounds, app bar
   static const Color white = Color(0xFFFFFFFF);
+
+  // ── Semantic status pills ──────────────────────────────────
+  // Background/foreground pairs for badges that report a state — order
+  // lifecycle, refunds, payments. Grouped the same way the web client groups
+  // its badge variants.
+
+  static const Color warningSurface = Color(0xFFFFF4E5);
+  static const Color warningContent = Color(0xFF9A6400);
+
+  static const Color infoSurface = Color(0xFFE8F1FF);
+  static const Color infoContent = Color(0xFF4897FF);
+
+  static const Color successSurface = Color(0xFFE6F7E8);
+  static const Color successContent = Color(0xFF1F7A2E);
+
+  static const Color errorSurface = Color(0xFFFDE8E8);
+  static const Color errorContent = Color(0xFFD92D20);
+
+  static const Color neutralSurface = Color(0xFFEAEAEA);
+  static const Color neutralContent = Color(0xFF767676);
 }
