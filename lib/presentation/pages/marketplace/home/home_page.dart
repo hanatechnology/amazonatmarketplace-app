@@ -8,10 +8,11 @@ import '../../../../core/theme/marketplace_typography.dart';
 import '../../../../core/theme/marketplace_spacing.dart';
 import '../../../../core/localization/locale_keys.dart';
 import '../../../../core/components/marketplace/search_bar_widget.dart';
-import '../../../../core/components/marketplace/promo_banner.dart';
+import '../../../../core/components/marketplace/banner_card.dart';
 import '../../../../core/components/marketplace/category_chip.dart';
 import '../../../../core/components/marketplace/product_card.dart';
 import '../../../../core/components/marketplace/loading_shimmer.dart';
+import '../../../../core/components/marketplace/notifications/notification_bell_button.dart';
 import '../../../controllers/marketplace/home_controller.dart';
 import '../../../../domain/entities/marketplace/product_entity.dart';
 import '../../../../domain/entities/marketplace/category_entity.dart';
@@ -77,12 +78,20 @@ class _HomePageState extends State<HomePage> {
                     MarketplaceSpacing.screenPaddingH,
                     MarketplaceSpacing.md,
                   ),
-                  child: SearchBarWidget(
-                    hintText: LocaleKeys.searchProducts.tr,
-                    onSearch: controller.searchProducts,
-                    onFilter: () {
-                      // TODO: Open filter bottom sheet
-                    },
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SearchBarWidget(
+                          hintText: LocaleKeys.searchProducts.tr,
+                          onSearch: controller.searchProducts,
+                          onFilter: () {
+                            // TODO: Open filter bottom sheet
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: MarketplaceSpacing.sm),
+                      const NotificationBellButton(),
+                    ],
                   ),
                 ),
               ),
@@ -113,14 +122,9 @@ class _HomePageState extends State<HomePage> {
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: MarketplaceSpacing.screenPaddingH,
                                 ),
-                                child: PromoBanner(
-                                  title: banner['title']!.tr,
-                                  subtitle: banner['subtitle']!.tr,
-                                  ctaLabel: banner['cta']!.tr,
-                                  imageUrl: banner['image']!,
-                                  onCta: () {
-                                    // TODO: Navigate to promotion
-                                  },
+                                child: BannerCard(
+                                  banner: banner,
+                                  onTap: () => controller.onBannerTap(banner),
                                 ),
                               );
                             },

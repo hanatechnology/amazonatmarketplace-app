@@ -1,5 +1,9 @@
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../app/routes/app_routes.dart';
 import '../../../core/bases/base_state_controller.dart';
+import '../../../domain/entities/marketplace/banner_entity.dart';
+import '../../../domain/usecases/marketplace/banner/get_banners_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_products_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_categories_use_case.dart';
 import '../../../domain/usecases/marketplace/product/search_products_use_case.dart';
@@ -9,45 +13,44 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
   static const String kCategories = 'categories';
   static const String kProducts = 'products';
   static const String kSearch = 'search';
+  static const String kBanners = 'banners';
 
   // ── Local reactive state ───────────────────────────────
   final searchQuery = ''.obs;
   final activeBannerIndex = 0.obs;
 
-  // ── Banner data (static for now, later from API) ───────
-  final banners = <Map<String, String>>[].obs;
+  /// Banners from `GET /banners`, ordered by the backend's `sort_order`.
+  List<BannerEntity> get banners =>
+      getOperationData<List<BannerEntity>>(kBanners) ?? const [];
 
   @override
   void onInit() {
     super.onInit();
-    _loadBanners();
     loadHomeData();
   }
 
-  void _loadBanners() {
-    // TODO: Replace with API call when banner endpoint is ready
-    banners.value = [
-      {
-        'title': 'new_collection',
-        'subtitle': 'discount_banner',
-        'cta': 'shop_now',
-        'image': 'assets/images/banner_1.png',
-      },
-      {
-        'title': 'new_collection',
-        'subtitle': 'discount_banner',
-        'cta': 'shop_now',
-        'image': 'assets/images/banner_2.png',
-      },
-    ];
-  }
-
-  /// Load categories + products in parallel
+  /// Load banners + categories + products in parallel
   Future<void> loadHomeData() async {
     await handleMultipleStates({
+      kBanners: () => Get.find<GetBannersUseCase>().execute(),
       kCategories: () => Get.find<GetCategoriesUseCase>().execute(),
       kProducts: () => useCase.execute(),
     });
+  }
+
+  /// A PRODUCT banner opens the product; an IMAGE_LINK banner opens its URL
+  /// outside the app. A banner with no destination is inert.
+  Future<void> onBannerTap(BannerEntity banner) async {
+    if (!banner.isTappable) return;
+
+    switch (banner.type) {
+      case BannerType.product:
+        Get.toNamed(Routes.MARKETPLACE_PRODUCT, arguments: banner.productId);
+      case BannerType.imageLink:
+        final uri = Uri.tryParse(banner.linkUrl!);
+        if (uri == null) return;
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   /// Pull-to-refresh
