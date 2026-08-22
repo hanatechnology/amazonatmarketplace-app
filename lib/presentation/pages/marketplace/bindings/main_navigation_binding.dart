@@ -17,6 +17,7 @@ import '../../../../data/repositories/seller_repository.dart';
 import '../../../../data/repositories/marketplace_order_repository.dart';
 import '../../../../data/services/api_service.dart';
 import '../../../../domain/usecases/marketplace/product/get_products_use_case.dart';
+import '../../../../domain/usecases/marketplace/product/get_products_page_use_case.dart';
 import '../../../../domain/usecases/marketplace/seller/get_sellers_use_case.dart';
 import '../../../../domain/usecases/marketplace/order/get_orders_use_case.dart';
 import '../../../../data/repositories/checkout_repository.dart';
@@ -48,6 +49,7 @@ class MainNavigationBinding extends Bindings {
 
     // Product / seller / order use cases
     Get.lazyPut(() => GetProductsUseCase(Get.find()), fenix: true);
+    Get.lazyPut(() => GetProductsPageUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetSellersUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetOrdersUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetCategoriesUseCase(Get.find()), fenix: true);

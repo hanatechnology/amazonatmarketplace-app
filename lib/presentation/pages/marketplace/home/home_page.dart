@@ -12,6 +12,7 @@ import '../../../../core/components/marketplace/banner_card.dart';
 import '../../../../core/components/marketplace/category_chip.dart';
 import '../../../../core/components/marketplace/product_card.dart';
 import '../../../../core/components/marketplace/loading_shimmer.dart';
+import '../../../../core/components/feedback/loading_indicator.dart';
 import '../../../../core/components/marketplace/notifications/notification_bell_button.dart';
 import '../../../controllers/marketplace/home_controller.dart';
 import '../../../../domain/entities/marketplace/product_entity.dart';
@@ -28,6 +29,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final controller = Get.find<HomeController>();
   final _bannerController = PageController();
+  final _scrollController = ScrollController();
   Timer? _autoScrollTimer;
   bool _userInteractingWithBanner = false;
   String? _selectedCategoryId;
@@ -36,12 +38,25 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _startAutoScroll();
+    _scrollController.addListener(_onScroll);
+  }
+
+  /// Fetch the next page once the user is within one viewport of the end, so
+  /// the next batch is already arriving before they hit the bottom.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - position.viewportDimension) {
+      controller.loadMoreProducts();
+    }
   }
 
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
     _bannerController.dispose();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -68,6 +83,7 @@ class _HomePageState extends State<HomePage> {
           onRefresh: controller.refresh,
           color: MarketplaceColors.primary,
           child: CustomScrollView(
+            controller: _scrollController,
             slivers: [
               // ── Search Bar ──────────────────────────────
               SliverToBoxAdapter(
@@ -195,6 +211,9 @@ class _HomePageState extends State<HomePage> {
               // ── Product Grid ────────────────────────────
               _buildProductGrid(),
 
+              // ── Infinite-scroll footer ──────────────────
+              _buildProductsLoadMoreIndicator(),
+
               // ── Bottom spacing for nav bar ──────────────
               const SliverToBoxAdapter(
                 child: SizedBox(height: MarketplaceSpacing.xxl),
@@ -203,6 +222,21 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+    );
+  }
+
+  /// Spinner shown while the next product page is in flight.
+  Widget _buildProductsLoadMoreIndicator() {
+    return SliverToBoxAdapter(
+      child: Obx(() {
+        if (!controller.isLoadingMoreProducts.value) {
+          return const SizedBox.shrink();
+        }
+        return const Padding(
+          padding: EdgeInsets.symmetric(vertical: MarketplaceSpacing.lg),
+          child: Center(child: LoadingIndicator()),
+        );
+      }),
     );
   }
 

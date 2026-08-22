@@ -6,6 +6,7 @@ import 'package:marketplace/data/services/api_service.dart';
 import 'package:marketplace/data/models/marketplace/product_model.dart';
 import 'package:marketplace/data/models/marketplace/product_details_model.dart';
 import 'package:marketplace/data/models/marketplace/category_model.dart';
+import 'package:marketplace/domain/usecases/base_use_case.dart';
 
 class ProductRepository extends BaseRepository<ApiService> {
   ProductRepository(super.service);
@@ -49,6 +50,45 @@ class ProductRepository extends BaseRepository<ApiService> {
 
   Future<Result<List<ProductModel>>> searchProducts(String query) {
     return getProducts(search: query);
+  }
+
+  /// Same endpoint as [getProducts], but keeps the pagination envelope so
+  /// callers can drive infinite scroll. [getProducts] discards it.
+  Future<Result<PaginatedResult<ProductModel>>> getProductsPage({
+    int page = 1,
+    int limit = 20,
+    String? search,
+    String? categoryId,
+    String? vendorId,
+    String? featuredSection,
+    String? sortBy,
+    String? sortDirection,
+  }) {
+    return get(
+      '/products',
+      (json) {
+        final response = BasePaginatedResponse.fromJson(
+          json as Map<String, dynamic>,
+          (item) => ProductModel.fromJson(item as Map<String, dynamic>),
+        );
+        return PaginatedResult<ProductModel>(
+          items: response.data,
+          currentPage: response.page,
+          totalPages: response.totalPages,
+          totalItems: response.total,
+        );
+      },
+      queryParams: {
+        'page': page,
+        'limit': limit,
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (categoryId != null) 'category_id': categoryId,
+        if (vendorId != null) 'vendor_id': vendorId,
+        if (featuredSection != null) 'featured_section': featuredSection,
+        if (sortBy != null) 'sortBy': sortBy,
+        if (sortDirection != null) 'sortDirection': sortDirection,
+      },
+    );
   }
 
   Future<Result<List<CategoryModel>>> getCategories() {
