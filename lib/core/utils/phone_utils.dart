@@ -21,7 +21,7 @@ abstract class PhoneUtils {
     if (cleaned.startsWith(_digits)) return '+$cleaned';
     if (cleaned.startsWith('0')) return '$countryCode${cleaned.substring(1)}';
     if (cleaned.length == nationalLength) return '$countryCode$cleaned';
-    return '$cleaned';
+    return cleaned;
   }
 
   static bool isValid(String input) =>

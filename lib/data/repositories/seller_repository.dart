@@ -13,8 +13,13 @@ class SellerRepository extends BaseRepository<ApiService> {
 
   /// `GET /stores` — approved, verified vendor stores.
   ///
-  /// [search] maps to the spec's dynamic `filters` param as `contain_name`,
-  /// which is how the web client searches this endpoint.
+  /// `GET /stores` documents no `search` param, so [search] goes through the
+  /// endpoint's generic `filters` object instead, as an OR group across both
+  /// name columns — a customer typing Arabic and a customer typing Latin both
+  /// have to match.
+  ///
+  /// The columns are `store_name_ar` / `store_name_en`; a bare `contain_name`
+  /// is not a column on the vendor table and the endpoint answers 500 to it.
   Future<Result<PaginatedResult<SellerModel>>> getSellers({
     int page = 1,
     int limit = 20,
@@ -37,7 +42,10 @@ class SellerRepository extends BaseRepository<ApiService> {
       queryParams: {
         'page': page,
         'limit': limit,
-        if (search != null && search.isNotEmpty) 'contain_name': search,
+        if (search != null && search.trim().isNotEmpty) ...{
+          'filters[or][0][contain_store_name_en]': search.trim(),
+          'filters[or][0][contain_store_name_ar]': search.trim(),
+        },
       },
     );
   }

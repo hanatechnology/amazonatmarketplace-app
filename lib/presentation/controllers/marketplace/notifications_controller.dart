@@ -9,6 +9,7 @@ import 'package:marketplace/domain/usecases/marketplace/notification/get_notific
 import 'package:marketplace/domain/usecases/marketplace/notification/get_unread_count_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/notification/mark_all_notifications_read_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/notification/mark_notification_read_use_case.dart';
+import 'notification_badge_controller.dart';
 
 /// Read-state filter shown as chips above the list.
 enum NotificationReadFilter {
@@ -157,7 +158,10 @@ class NotificationsController extends BaseStateController<GetNotificationsUseCas
     await handleState<int>(
       kMarkAllRead,
       () => Get.find<MarkAllNotificationsReadUseCase>().execute(),
-      onSuccess: (_, __) => refreshNotifications(),
+      onSuccess: (_, __) {
+        NotificationBadgeController.publish(0);
+        refreshNotifications();
+      },
     );
   }
 
@@ -218,5 +222,6 @@ class NotificationsController extends BaseStateController<GetNotificationsUseCas
     final current = unreadCount;
     if (current <= 0) return;
     stateFor<int>(kUnreadCount).value = AppStateSuccess(current - 1);
+    NotificationBadgeController.publish(current - 1);
   }
 }

@@ -6,11 +6,13 @@ import '../../../core/states/app_state.dart';
 import '../../../domain/entities/marketplace/banner_entity.dart';
 import '../../../domain/entities/marketplace/category_entity.dart';
 import '../../../domain/entities/marketplace/product_entity.dart';
+import '../../../domain/entities/marketplace/seller_entity.dart';
 import '../../../domain/usecases/marketplace/banner/get_banners_use_case.dart';
 import '../../../domain/usecases/base_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_products_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_products_page_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_categories_use_case.dart';
+import '../../../domain/usecases/marketplace/seller/get_sellers_use_case.dart';
 
 class HomeController extends BaseStateController<GetProductsUseCase> {
   /// Matches the API default page size for `/products`.
@@ -20,9 +22,17 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
   static const String kCategories = 'categories';
   static const String kProducts = 'products';
   static const String kBanners = 'banners';
+  static const String kStores = 'stores';
+
+  /// How many stores the home "Featured stores" section shows.
+  static const int kStoresPreviewSize = 3;
 
   // ── Local reactive state ───────────────────────────────
   final activeBannerIndex = 0.obs;
+
+  /// Selected category pill. Empty means "All" — the home rail and grid are
+  /// unfiltered; picking a category opens the products list instead, so this is
+  /// only ever a visual selection.
   final hasMoreProducts = false.obs;
   final isLoadingMoreProducts = false.obs;
 
@@ -31,6 +41,10 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
   /// Banners from `GET /banners`, ordered by the backend's `sort_order`.
   List<BannerEntity> get banners =>
       getOperationData<List<BannerEntity>>(kBanners) ?? const [];
+
+  /// Stores from `GET /stores` — first page only, trimmed to the preview size.
+  List<SellerEntity> get featuredStores =>
+      getOperationData<List<SellerEntity>>(kStores) ?? const [];
 
   @override
   void onInit() {
@@ -52,6 +66,7 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
           kCategories,
           () => Get.find<GetCategoriesUseCase>().execute(),
         ),
+        StateOperation<List<SellerEntity>>(kStores, _loadFeaturedStores),
       ]),
       loadProducts(),
     ]);
@@ -73,6 +88,7 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
   }
 
   /// Pull-to-refresh
+  @override
   Future<void> refresh() async {
     await loadHomeData();
   }
@@ -121,5 +137,27 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
 
   void onBannerChanged(int index) {
     activeBannerIndex.value = index;
+  }
+
+  /// First page of `GET /stores`, cut to [kStoresPreviewSize].
+  ///
+  /// The endpoint is paginated and the section is a preview, so the extra
+  /// items are dropped here rather than in the widget — the state then holds
+  /// exactly what is rendered.
+  Future<AppState<List<SellerEntity>>> _loadFeaturedStores() async {
+    final state = await Get.find<GetSellersUseCase>().call(
+      const PaginationInput(page: 1, limit: kStoresPreviewSize),
+    );
+
+    return state.when(
+      onInitial: () => const AppStateInitial<List<SellerEntity>>(),
+      onLoading: () => const AppStateLoading<List<SellerEntity>>(),
+      onSuccess: (paged, message) => AppStateSuccess(
+        paged.items.take(kStoresPreviewSize).toList(),
+        message: message,
+      ),
+      onError: (message, code) =>
+          AppStateError<List<SellerEntity>>(message, code: code),
+    );
   }
 }

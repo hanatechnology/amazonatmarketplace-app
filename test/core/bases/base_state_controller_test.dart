@@ -14,9 +14,6 @@ class _Category {
 }
 
 class _TestController extends BaseStateController<Object> {
-  @override
-  void onInit() {}
-
   Future<void> loadParallel() => handleMultipleStates([
         StateOperation<List<_Banner>>(
           'banners',

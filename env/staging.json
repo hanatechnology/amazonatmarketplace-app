@@ -1,0 +1,5 @@
+{
+  "ENV": "staging",
+  "API_BASE_URL": "https://api.marketplace.amazonatlibya.org/client/api/v1",
+  "ENABLE_HTTP_LOGS": true
+}

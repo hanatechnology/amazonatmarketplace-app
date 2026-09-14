@@ -6,6 +6,10 @@ class LocalCartItemEntity extends Equatable {
   final String imageUrl;
   final String sellerName;
   final String sellerId;
+
+  /// Seller's logo, carried so the cart and checkout can show the storefront
+  /// mark without refetching the vendor.
+  final String sellerLogoUrl;
   final double price;
   final double? originalPrice;
   final int? discountPercent;
@@ -19,6 +23,7 @@ class LocalCartItemEntity extends Equatable {
     required this.imageUrl,
     required this.sellerName,
     required this.sellerId,
+    this.sellerLogoUrl = '',
     required this.price,
     this.originalPrice,
     this.discountPercent,

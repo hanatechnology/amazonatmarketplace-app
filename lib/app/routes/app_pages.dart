@@ -8,48 +8,40 @@ import '../../presentation/pages/marketplace/onboarding/onboarding_page.dart';
 import '../../presentation/pages/marketplace/auth/join_now_page.dart';
 import '../../presentation/pages/marketplace/auth/marketplace_login_page.dart';
 import '../../presentation/pages/marketplace/auth/verify_phone_page.dart';
-import '../../presentation/pages/marketplace/auth/verification_page.dart';
-import '../../presentation/pages/marketplace/auth/complete_details_page.dart';
+import '../../presentation/pages/marketplace/auth/create_account_page.dart';
 import '../../presentation/pages/marketplace/main_navigation_page.dart';
 import '../../presentation/pages/marketplace/product/product_details_page.dart';
+import '../../presentation/pages/marketplace/product/product_gallery_page.dart';
 import '../../presentation/pages/marketplace/category/products_list_page.dart';
 import '../../presentation/pages/marketplace/search/product_search_page.dart';
 import '../../presentation/pages/marketplace/search/bindings/product_search_binding.dart';
 import '../../presentation/pages/marketplace/category/bindings/products_list_binding.dart';
-import '../../presentation/pages/marketplace/product/reviews_page.dart';
-import '../../presentation/pages/marketplace/product/product_sellers_page.dart';
 import '../../presentation/pages/marketplace/seller/seller_profile_page.dart';
 import '../../presentation/pages/marketplace/cart/checkout_page.dart';
-import '../../presentation/pages/marketplace/cart/add_card_page.dart';
 import '../../presentation/pages/marketplace/cart/order_confirmed_page.dart';
 import '../../presentation/pages/marketplace/cart/payment_webview_page.dart';
 import '../../presentation/pages/marketplace/cart/order_cancelled_page.dart';
 import '../../presentation/pages/marketplace/orders/my_orders_page.dart';
 import '../../presentation/pages/marketplace/orders/order_details_page.dart';
-import '../../presentation/pages/marketplace/orders/tracking_page.dart';
-import '../../presentation/pages/marketplace/orders/return_page.dart';
-import '../../presentation/pages/marketplace/orders/pickup_page.dart';
 import '../../presentation/pages/marketplace/account/address_book_page.dart';
-import '../../presentation/pages/marketplace/account/add_edit_address_page.dart';
-import '../../presentation/pages/marketplace/account/delivery_areas_page.dart';
+import '../../presentation/pages/marketplace/account/add_address_page.dart';
 import '../../presentation/pages/marketplace/account/help_center_page.dart';
 
 // Bindings
 import '../../presentation/pages/marketplace/auth/bindings/marketplace_auth_binding.dart';
-import '../../presentation/pages/marketplace/home/bindings/home_binding.dart';
-import '../../presentation/pages/marketplace/cart/bindings/cart_binding.dart';
 import '../../presentation/pages/marketplace/cart/bindings/checkout_binding.dart';
 import '../../presentation/pages/marketplace/cart/bindings/payment_webview_binding.dart';
 import '../../presentation/pages/marketplace/orders/bindings/orders_binding.dart';
 import '../../presentation/pages/marketplace/orders/bindings/order_details_binding.dart';
 import '../../presentation/pages/marketplace/refunds/refund_request_page.dart';
+import '../../presentation/pages/marketplace/refunds/transaction_proof_page.dart';
 import '../../presentation/pages/marketplace/refunds/bindings/refund_request_binding.dart';
 import '../../presentation/pages/marketplace/cart/edfali_confirm_page.dart';
 import '../../presentation/pages/marketplace/cart/bindings/edfali_confirm_binding.dart';
 import '../../presentation/pages/marketplace/seller/bindings/seller_binding.dart';
 import '../../presentation/pages/marketplace/account/bindings/account_binding.dart';
 import '../../presentation/pages/marketplace/account/bindings/addresses_binding.dart';
-import '../../presentation/pages/marketplace/account/bindings/add_edit_address_binding.dart';
+import '../../presentation/pages/marketplace/account/bindings/add_address_binding.dart';
 import '../../presentation/pages/marketplace/product/bindings/product_binding.dart';
 import '../../presentation/pages/marketplace/bindings/main_navigation_binding.dart';
 import '../../presentation/pages/marketplace/notifications/notifications_page.dart';
@@ -81,13 +73,8 @@ abstract class AppPages {
       binding: MarketplaceAuthBinding(),
     ),
     GetPage(
-      name: Routes.MARKETPLACE_VERIFICATION,
-      page: () => const VerificationPage(),
-      binding: MarketplaceAuthBinding(),
-    ),
-    GetPage(
       name: Routes.MARKETPLACE_COMPLETE_DETAILS,
-      page: () => const CompleteDetailsPage(),
+      page: () => const CreateAccountPage(),
       binding: MarketplaceAuthBinding(),
     ),
     GetPage(
@@ -117,14 +104,14 @@ abstract class AppPages {
       binding: ProductBinding(),
     ),
     GetPage(
-      name: Routes.MARKETPLACE_REVIEWS,
-      page: () => const ReviewsPage(),
-      binding: ProductBinding(),
-    ),
-    GetPage(
-      name: Routes.MARKETPLACE_PRODUCT_SELLERS,
-      page: () => const ProductSellersPage(),
-      binding: ProductBinding(),
+      name: Routes.MARKETPLACE_PRODUCT_GALLERY,
+      page: () => const ProductGalleryPage(),
+      // No binding: the screen is handed its images and needs no controller.
+      // Fades rather than slides — it is the same photo growing to fill the
+      // screen, not a different place.
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 200),
+      opaque: false,
     ),
     GetPage(
       name: Routes.MARKETPLACE_SELLER,
@@ -135,11 +122,6 @@ abstract class AppPages {
       name: Routes.MARKETPLACE_CHECKOUT,
       page: () => const CheckoutPage(),
       binding: CheckoutBinding(),
-    ),
-    GetPage(
-      name: Routes.MARKETPLACE_ADD_CARD,
-      page: () => const AddCardPage(),
-      binding: CartBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_ORDER_CONFIRMED,
@@ -170,24 +152,17 @@ abstract class AppPages {
       binding: OrderDetailsBinding(),
     ),
     GetPage(
-      name: Routes.MARKETPLACE_TRACKING,
-      page: () => const TrackingPage(),
-      binding: OrdersBinding(),
-    ),
-    GetPage(
-      name: Routes.MARKETPLACE_RETURN,
-      page: () => const ReturnPage(),
-      binding: OrdersBinding(),
-    ),
-    GetPage(
-      name: Routes.MARKETPLACE_PICKUP,
-      page: () => const PickupPage(),
-      binding: OrdersBinding(),
-    ),
-    GetPage(
       name: Routes.MARKETPLACE_REFUND_REQUEST,
       page: () => const RefundRequestPage(),
       binding: RefundRequestBinding(),
+    ),
+    GetPage(
+      name: Routes.MARKETPLACE_TRANSACTION_PROOF,
+      page: () => const TransactionProofPage(),
+      // No binding: the screen is handed one image URL and needs no controller.
+      transition: Transition.fadeIn,
+      transitionDuration: const Duration(milliseconds: 200),
+      opaque: false,
     ),
     GetPage(
       name: Routes.MARKETPLACE_NOTIFICATIONS,
@@ -202,14 +177,9 @@ abstract class AppPages {
     ),
     GetPage(
       name: Routes.MARKETPLACE_ADD_ADDRESS,
-      page: () => const AddEditAddressPage(),
-      binding: AddEditAddressBinding(),
+      page: () => const AddAddressPage(),
+      binding: AddAddressBinding(),
       transition: Transition.rightToLeft,
-    ),
-    GetPage(
-      name: Routes.MARKETPLACE_DELIVERY_AREAS,
-      page: () => const DeliveryAreasPage(),
-      binding: AccountBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_HELP,

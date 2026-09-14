@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../theme/marketplace_colors.dart';
 import '../../theme/marketplace_spacing.dart';
+import '../../theme/marketplace_palette.dart';
 import '../../theme/marketplace_radius.dart';
 
 /// Base shimmer box — use instead of hardcoded grey containers
@@ -17,7 +18,7 @@ class _ShimmerBox extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: MarketplaceColors.stroke.withOpacity(0.4),
+        color: MarketplaceColors.stroke.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(borderRadius ?? 8),
       ),
     );
@@ -32,61 +33,86 @@ class _ShimmerWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: MarketplaceColors.stroke.withOpacity(0.4),
-      highlightColor: MarketplaceColors.stroke.withOpacity(0.15),
+      baseColor: MarketplaceColors.stroke.withValues(alpha: 0.4),
+      highlightColor: MarketplaceColors.stroke.withValues(alpha: 0.15),
       child: child,
     );
   }
 }
 
-/// Matches ProductCard: 164×231
+/// Skeleton in the real card geometry, so the grid does not reflow when the
+/// products land.
+///
+/// Palette-aware, unlike the older shimmers in this file: on the ink ground a
+/// light-grey box is a hole, not a placeholder.
 class ProductCardShimmer extends StatelessWidget {
   const ProductCardShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return _ShimmerWrapper(
-      child: Container(
-        width: MarketplaceSpacing.productCardWidth,
-        height: MarketplaceSpacing.productCardHeight,
-        decoration: BoxDecoration(
-          color: MarketplaceColors.stroke.withOpacity(0.4),
-          borderRadius: BorderRadius.circular(MarketplaceRadius.card),
-        ),
-        padding: const EdgeInsets.all(7),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image placeholder
-            _ShimmerBox(
+    final palette = context.palette;
+
+    Widget bar(double? width, double height) => Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: palette.shimmerBase,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
+
+    return Shimmer.fromColors(
+      baseColor: palette.shimmerBase,
+      highlightColor: palette.shimmerHighlight,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Flexes exactly as the real plate does, for the same reason.
+          Expanded(
+            child: Container(
               width: double.infinity,
-              height: MarketplaceSpacing.productImageHeight,
-              borderRadius: MarketplaceRadius.cardImage,
+              decoration: BoxDecoration(
+                color: palette.shimmerBase,
+                borderRadius:
+                    BorderRadius.circular(MarketplaceRadius.productPlate),
+              ),
             ),
-            const SizedBox(height: 8),
-            // Name
-            _ShimmerBox(width: double.infinity, height: 12, borderRadius: 4),
-            const SizedBox(height: 4),
-            // Seller
-            _ShimmerBox(width: 80, height: 10, borderRadius: 4),
-            const SizedBox(height: 8),
-            // Price + button row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: MarketplaceSpacing.productCardNameHeight,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: bar(double.infinity, 11),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            height: MarketplaceSpacing.productCardSellerHeight,
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: bar(74, 9),
+            ),
+          ),
+          const SizedBox(height: 9),
+          SizedBox(
+            height: MarketplaceSpacing.productCardAddRowHeight,
+            child: Row(
               children: [
-                _ShimmerBox(width: 60, height: 12, borderRadius: 4),
-                _ShimmerBox(width: 24, height: 12, borderRadius: 4),
+                bar(62, 15),
+                const Spacer(),
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: palette.shimmerBase,
+                    shape: BoxShape.circle,
+                  ),
+                ),
               ],
             ),
-            const Spacer(),
-            // Button
-            _ShimmerBox(
-              width: double.infinity,
-              height: 36,
-              borderRadius: MarketplaceRadius.smallButton,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -102,7 +128,7 @@ class CartItemShimmer extends StatelessWidget {
       child: Container(
         height: MarketplaceSpacing.cartItemHeight,
         decoration: BoxDecoration(
-          color: MarketplaceColors.stroke.withOpacity(0.4),
+          color: MarketplaceColors.stroke.withValues(alpha: 0.4),
           borderRadius: BorderRadius.circular(MarketplaceRadius.cartItem),
         ),
         padding: const EdgeInsets.all(8),

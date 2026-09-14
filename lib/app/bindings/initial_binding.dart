@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/services/api_service.dart';
 import '../../data/services/storage_service.dart';
+import '../../data/services/theme_service.dart';
 import '../../data/repositories/device_token_repository.dart';
 import '../../data/repositories/local_cart_repository.dart';
 import '../../domain/usecases/marketplace/notification/clear_device_token_use_case.dart';
@@ -12,15 +13,16 @@ import '../../core/localization/locale_controller.dart';
 
 /// Initial binding that registers permanent services for the entire app lifecycle.
 class InitialBinding extends Bindings {
-
   @override
   void dependencies() {
-  
     // Register StorageService (permanent)
     Get.put<StorageService>(
       StorageService.instance,
       permanent: true,
     );
+    // Theme preference (permanent) — read by the account screen's toggle.
+    Get.put<ThemeService>(ThemeService(), permanent: true);
+
     // Register DioClient (permanent, no token yet — token is injected below
     // after reading secure storage, and again after every login/logout).
     final dioClient = DioClient();
@@ -31,8 +33,18 @@ class InitialBinding extends Bindings {
 
     // Hydrate the token from secure storage so authenticated users stay
     // logged in across cold starts without an async race condition.
+    dioClient.beginHydration();
     StorageService.instance.getToken().then((token) {
-      if (token != null) dioClient.updateToken(token);
+      // updateToken also releases requests parked during hydration; the null
+      // branch releases them without a token — that customer is logged out.
+      if (token != null) {
+        dioClient.updateToken(token);
+      } else {
+        dioClient.finishHydration();
+      }
+    }).catchError((Object _) {
+      dioClient.finishHydration();
+      return null;
     });
 
     // SharedPreferences — already initialised in main() via StorageService.init()

@@ -1,18 +1,32 @@
 import 'package:flutter/material.dart';
-import 'package:marketplace/core/theme/marketplace_colors.dart';
-import 'package:marketplace/core/theme/marketplace_radius.dart';
-import 'package:marketplace/core/theme/marketplace_spacing.dart';
-import 'package:marketplace/core/theme/marketplace_typography.dart';
+import 'package:get/get.dart';
 
+import '../../../localization/locale_keys.dart';
+import '../../../theme/marketplace_palette.dart';
+import '../../../theme/marketplace_radius.dart';
+import '../../../theme/marketplace_typography.dart';
+
+/// The three shorthand labels an address can carry.
+///
+/// `label` is optional in `CreateAddressDto`, so these chips are a convenience,
+/// not a requirement. The wire value stays English and stable — it is stored on
+/// the record — while the chip shows the customer's language.
 enum AddressLabelChip {
   home,
   work,
   other;
 
+  /// What is sent to the API. Never localized: it is persisted data.
   String get label => switch (this) {
         home => 'Home',
         work => 'Work',
         other => 'Other',
+      };
+
+  String get displayLabel => switch (this) {
+        home => LocaleKeys.labelChipHome.tr,
+        work => LocaleKeys.labelChipWork.tr,
+        other => LocaleKeys.labelChipOther.tr,
       };
 
   IconData get icon => switch (this) {
@@ -40,14 +54,16 @@ class AddressLabelChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: MarketplaceSpacing.sm,
-      runSpacing: MarketplaceSpacing.sm,
+      spacing: 8,
+      runSpacing: 8,
       children: AddressLabelChip.values
-          .map((chip) => _LabelChip(
-                chip: chip,
-                isSelected: dto.selectedChip == chip,
-                onTap: () => dto.onSelect(chip),
-              ))
+          .map(
+            (chip) => _LabelChip(
+              chip: chip,
+              isSelected: dto.selectedChip == chip,
+              onTap: () => dto.onSelect(chip),
+            ),
+          )
           .toList(),
     );
   }
@@ -66,18 +82,20 @@ class _LabelChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 44),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        height: 40,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: isSelected ? MarketplaceColors.primary : Colors.transparent,
+          color: isSelected ? palette.brand : palette.surface,
           borderRadius: BorderRadius.circular(MarketplaceRadius.full),
           border: Border.all(
-            color: isSelected
-                ? MarketplaceColors.primary
-                : MarketplaceColors.stroke,
+            color: isSelected ? palette.brand : palette.hairline,
           ),
         ),
         child: Row(
@@ -85,18 +103,15 @@ class _LabelChip extends StatelessWidget {
           children: [
             Icon(
               chip.icon,
-              size: 16,
-              color: isSelected
-                  ? MarketplaceColors.onPrimary
-                  : MarketplaceColors.textSecondary,
+              size: 15,
+              color: isSelected ? palette.onBrand : palette.textSecondary,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 7),
             Text(
-              chip.label,
-              style: MarketplaceTypography.cardTitle.copyWith(
-                color: isSelected
-                    ? MarketplaceColors.onPrimary
-                    : MarketplaceColors.textBody,
+              chip.displayLabel,
+              style: MarketplaceTypography.pillLabel.copyWith(
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? palette.onBrand : palette.textSecondary,
               ),
             ),
           ],

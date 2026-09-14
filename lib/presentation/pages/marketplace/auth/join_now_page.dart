@@ -1,106 +1,161 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/theme/marketplace_colors.dart';
-import '../../../../core/theme/marketplace_typography.dart';
-import '../../../../core/theme/marketplace_spacing.dart';
-import '../../../../core/theme/marketplace_radius.dart';
-import '../../../../core/localization/locale_keys.dart';
-import '../../../../app/routes/app_routes.dart';
 
+import '../../../../app/routes/app_routes.dart';
+import '../../../../core/localization/locale_keys.dart';
+import '../../../../core/theme/marketplace_palette.dart';
+import '../../../../core/theme/marketplace_radius.dart';
+import '../../../../core/theme/marketplace_typography.dart';
+
+/// Welcome — one action, because there is only one that works.
+///
+/// Guest browsing is not offered: `/products`, `/categories`, `/stores` and
+/// `/banners` all require `clientAccessToken` and answer 401 without it, so
+/// there is nothing to look at before signing in. Nor is there a social
+/// sign-in endpoint anywhere in the contract.
+///
+/// The three chips underneath are facts each backed by an endpoint —
+/// payment methods, verified stores, city coverage — not decoration.
 class JoinNowPage extends StatelessWidget {
   const JoinNowPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+
     return Scaffold(
-      backgroundColor: MarketplaceColors.surface,
+      backgroundColor: palette.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: MarketplaceSpacing.screenPaddingH,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(flex: 2),
-
-              // ── Illustration Placeholder ────────────────
-              Center(
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    color: MarketplaceColors.secondary.withOpacity(0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.shopping_bag_outlined,
-                    size: 80,
-                    color: MarketplaceColors.primary,
-                  ),
+              Container(
+                width: 72,
+                height: 72,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: palette.brand,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Icon(
+                  Icons.storefront_rounded,
+                  size: 34,
+                  color: palette.onBrand,
                 ),
               ),
-
-              const SizedBox(height: MarketplaceSpacing.xl),
-
+              const SizedBox(height: 26),
               Text(
-                LocaleKeys.joinNowTitle.tr,
-                style: MarketplaceTypography.screenTitle,
-                textAlign: TextAlign.center,
+                LocaleKeys.welcomeTitle.tr,
+                style: MarketplaceTypography.heroDisplay.copyWith(
+                  fontSize: 34,
+                  color: palette.textPrimary,
+                ),
               ),
-              const SizedBox(height: MarketplaceSpacing.sm),
+              const SizedBox(height: 10),
               Text(
-                LocaleKeys.joinNowSubtitle.tr,
-                style: MarketplaceTypography.descriptionBody,
-                textAlign: TextAlign.center,
+                LocaleKeys.welcomeSubtitle.tr,
+                style: MarketplaceTypography.rowMeta.copyWith(
+                  fontSize: 12.5,
+                  height: 1.7,
+                  color: palette.textSecondary,
+                ),
               ),
-
+              const SizedBox(height: 26),
+              const _TrustChip(
+                icon: Icons.account_balance_wallet_outlined,
+                labelKey: LocaleKeys.trustPayment,
+              ),
+              const SizedBox(height: 9),
+              const _TrustChip(
+                icon: Icons.verified_outlined,
+                labelKey: LocaleKeys.trustStores,
+              ),
+              const SizedBox(height: 9),
+              const _TrustChip(
+                icon: Icons.local_shipping_outlined,
+                labelKey: LocaleKeys.trustDelivery,
+              ),
               const Spacer(flex: 3),
-
-              // ── Get Started Button ──────────────────────
-              ElevatedButton(
-                onPressed: () => Get.toNamed(Routes.MARKETPLACE_LOGIN),
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, MarketplaceSpacing.buttonHeight),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(MarketplaceRadius.button),
-                  ),
-                ),
-                child: Text(
-                  LocaleKeys.getStarted.tr,
-                  style: MarketplaceTypography.buttonLabel,
-                ),
-              ),
-
-              const SizedBox(height: MarketplaceSpacing.md),
-
-              // ── Already have account? Login ─────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    LocaleKeys.alreadyHaveAccount.tr,
-                    style: MarketplaceTypography.descriptionBody,
-                  ),
-                  TextButton(
-                    onPressed: () => Get.toNamed(Routes.MARKETPLACE_LOGIN),
-                    child: Text(
-                      LocaleKeys.login.tr,
-                      style: MarketplaceTypography.body.copyWith(
-                        color: MarketplaceColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () => Get.toNamed(Routes.MARKETPLACE_LOGIN),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: palette.brand,
+                    foregroundColor: palette.onBrand,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(MarketplaceRadius.full),
                     ),
                   ),
-                ],
+                  child: Text(
+                    LocaleKeys.getStarted.tr,
+                    style: MarketplaceTypography.buttonLabel.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: palette.onBrand,
+                    ),
+                  ),
+                ),
               ),
-
-              const SizedBox(height: MarketplaceSpacing.xl),
+              const SizedBox(height: 14),
+              Center(
+                child: Text(
+                  LocaleKeys.termsAgreement.tr,
+                  textAlign: TextAlign.center,
+                  style: MarketplaceTypography.rowMeta.copyWith(
+                    fontSize: 10,
+                    color: palette.textMuted,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _TrustChip extends StatelessWidget {
+  const _TrustChip({required this.icon, required this.labelKey});
+
+  final IconData icon;
+  final String labelKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Row(
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: palette.surfaceSunken,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 15, color: palette.brand),
+        ),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Text(
+            labelKey.tr,
+            style: MarketplaceTypography.pillLabel.copyWith(
+              fontSize: 12,
+              color: palette.textSecondary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

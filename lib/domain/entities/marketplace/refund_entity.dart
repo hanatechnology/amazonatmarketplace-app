@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:marketplace/core/utils/localized_copy.dart';
 
 /// Lifecycle of a refund request.
 enum RefundStatus {
@@ -66,7 +67,9 @@ class RefundPayoutEntity extends Equatable {
     required this.netAmount,
     required this.requestedAt,
     this.processedAt,
-    this.payoutMethodName,
+    this.payoutMethodNameAr,
+    this.payoutMethodNameEn,
+    this.transactionImageUrl,
   });
 
   final String id;
@@ -74,11 +77,31 @@ class RefundPayoutEntity extends Equatable {
   final double netAmount;
   final DateTime requestedAt;
   final DateTime? processedAt;
-  final String? payoutMethodName;
+  final String? payoutMethodNameAr;
+  final String? payoutMethodNameEn;
+
+  /// Bank or wallet transfer receipt uploaded by the operator when the payout
+  /// was executed. Absent until then, and absent on a declined payout.
+  final String? transactionImageUrl;
+
+  String? get payoutMethodName =>
+      localizedCopy(payoutMethodNameAr, payoutMethodNameEn);
+
+  /// True when there is a receipt worth offering the customer.
+  bool get hasTransactionProof =>
+      transactionImageUrl != null && transactionImageUrl!.trim().isNotEmpty;
 
   @override
-  List<Object?> get props =>
-      [id, status, netAmount, requestedAt, processedAt, payoutMethodName];
+  List<Object?> get props => [
+        id,
+        status,
+        netAmount,
+        requestedAt,
+        processedAt,
+        payoutMethodNameAr,
+        payoutMethodNameEn,
+        transactionImageUrl,
+      ];
 }
 
 /// A scheduled pickup of the returned goods.
@@ -125,8 +148,10 @@ class RefundEntity extends Equatable {
     this.reason,
     this.declineReason,
     this.completedAt,
-    this.reasonLabel,
-    this.payoutMethodName,
+    this.reasonLabelAr,
+    this.reasonLabelEn,
+    this.payoutMethodNameAr,
+    this.payoutMethodNameEn,
     this.payouts = const [],
     this.collections = const [],
   });
@@ -141,12 +166,20 @@ class RefundEntity extends Equatable {
   final String? declineReason;
   final DateTime? completedAt;
 
-  /// Localized label of the picked reason; falls back to the free-text [reason].
-  final String? reasonLabel;
-  final String? payoutMethodName;
+  final String? reasonLabelAr;
+  final String? reasonLabelEn;
+  final String? payoutMethodNameAr;
+  final String? payoutMethodNameEn;
   final List<RefundPayoutEntity> payouts;
   final List<RefundCollectionEntity> collections;
 
+  /// Label of the picked reason in the language showing right now.
+  String? get reasonLabel => localizedCopy(reasonLabelAr, reasonLabelEn);
+
+  String? get payoutMethodName =>
+      localizedCopy(payoutMethodNameAr, payoutMethodNameEn);
+
+  /// The reason label, falling back to the customer's own free-text [reason].
   String? get displayReason {
     final label = reasonLabel;
     if (label != null && label.isNotEmpty) return label;
@@ -164,8 +197,10 @@ class RefundEntity extends Equatable {
         reason,
         declineReason,
         completedAt,
-        reasonLabel,
-        payoutMethodName,
+        reasonLabelAr,
+        reasonLabelEn,
+        payoutMethodNameAr,
+        payoutMethodNameEn,
         payouts,
         collections,
       ];
@@ -173,11 +208,18 @@ class RefundEntity extends Equatable {
 
 /// One entry from `GET /dropdowns/refund-reasons`.
 class RefundReasonEntity extends Equatable {
-  const RefundReasonEntity({required this.id, required this.label});
+  const RefundReasonEntity({
+    required this.id,
+    required this.labelAr,
+    required this.labelEn,
+  });
 
   final String id;
-  final String label;
+  final String labelAr;
+  final String labelEn;
+
+  String get label => localizedCopy(labelAr, labelEn) ?? '';
 
   @override
-  List<Object?> get props => [id, label];
+  List<Object?> get props => [id, labelAr, labelEn];
 }

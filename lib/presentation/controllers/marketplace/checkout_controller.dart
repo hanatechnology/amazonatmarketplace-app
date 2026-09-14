@@ -14,6 +14,7 @@ import 'package:marketplace/domain/entities/marketplace/shipping_fee_entity.dart
 import 'package:marketplace/domain/usecases/marketplace/cart/checkout_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/get_payment_methods_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/get_shipping_fee_use_case.dart';
+import 'cart_controller.dart';
 import 'edfali_confirm_controller.dart';
 import 'payment_webview_controller.dart';
 
@@ -36,6 +37,13 @@ class CheckoutController extends GetxController {
   final isLoadingAddresses = false.obs;
   final isCheckingOut      = false.obs;
   final isSummaryExpanded  = false.obs;
+
+  /// Set when the shipping preview is rejected for this vendor/address pair.
+  /// `GET /orders/shipping-fee` answers 400 "This vendor does not ship to
+  /// zone: …" — the only signal the contract gives that a store does not cover
+  /// an address, and checkout would otherwise fail at submit with the same
+  /// error after the customer had filled everything in.
+  final deliveryUnavailable = false.obs;
   final addressError       = false.obs;
   final paymentError       = false.obs;
 
@@ -71,6 +79,7 @@ class CheckoutController extends GetxController {
   void selectAddress(String id) {
     selectedAddressId.value = id;
     addressError.value = false;
+    deliveryUnavailable.value = false;
     _loadShippingFee();
   }
 
@@ -108,8 +117,16 @@ class CheckoutController extends GetxController {
       ),
     );
     state.maybeWhen(
-      onSuccess: (fee, _) => shippingFee.value = fee,
-      onError: (_, __) => shippingFee.value = null,
+      onSuccess: (fee, _) {
+        shippingFee.value = fee;
+        deliveryUnavailable.value = false;
+      },
+      onError: (_, code) {
+        shippingFee.value = null;
+        // 400 here means the pair was rejected, not that the network failed;
+        // anything else leaves the fee merely unknown and still orderable.
+        deliveryUnavailable.value = code == 400;
+      },
     );
     isLoadingShipping.value = false;
   }
@@ -142,6 +159,10 @@ class CheckoutController extends GetxController {
       paymentError.value = true;
       valid = false;
     }
+    if (deliveryUnavailable.value) {
+      addressError.value = true;
+      valid = false;
+    }
     if (requiresEdfaliMobile && edfaliMobile.text.trim().isEmpty) {
       // The API requires the wallet for EDFALI and never falls back to the
       // account phone, so it has to be collected and shown before submitting.
@@ -172,6 +193,15 @@ class CheckoutController extends GetxController {
       onLoading: () {},
       onSuccess: (data, _) async {
         isCheckingOut.value = false;
+
+        // The order now exists server-side, so this store's items leave the
+        // cart immediately — before payment completes, exactly as the web does.
+        // Leaving them there invites a second order (and a second debit) for
+        // goods that are already committed. Other stores' groups stay put.
+        if (Get.isRegistered<CartController>()) {
+          await Get.find<CartController>().clearVendor(checkoutArgs.vendorId);
+        }
+
         final paymentInit = data.paymentInitiation;
 
         // Exactly one route applies: Edfali collects an SMS PIN, a hosted
@@ -181,13 +211,14 @@ class CheckoutController extends GetxController {
             Routes.MARKETPLACE_EDFALI_CONFIRM,
             arguments: EdfaliConfirmArgs(
               orderId: data.order.id,
+              orderNumber: data.order.orderNumber,
               total: total,
               otpSentTo: paymentInit.otpSentTo,
               expiresInSeconds: paymentInit.expiresInSeconds,
             ),
           );
         } else if (paymentInit != null && paymentInit.hasHostedCheckout) {
-          await _openPaymentWebView(paymentInit);
+          await _openPaymentWebView(paymentInit, data.order);
         } else {
           _navigateToConfirmed(data.order);
         }
@@ -215,14 +246,17 @@ class CheckoutController extends GetxController {
     result.maybeWhen(
       onSuccess: (list, _) {
         addresses.assignAll(list.map(_toDto).toList());
-        // Auto-select the default address if nothing is selected yet.
-        if (selectedAddressId.value == null) {
-          try {
-            final def = list.firstWhere((a) => a.isDefault);
-            selectedAddressId.value = def.id;
-          } catch (_) {
-            if (list.isNotEmpty) selectedAddressId.value = list.first.id;
-          }
+        // Auto-select the default address — or the only one — if nothing is
+        // selected yet. This goes through selectAddress rather than assigning
+        // the id: the shipping fee is priced per address, and setting the id
+        // alone left the card looking chosen while the total stayed unpriced
+        // until the customer tapped the card they were already on.
+        if (selectedAddressId.value == null && list.isNotEmpty) {
+          final chosen = list.firstWhere(
+            (a) => a.isDefault,
+            orElse: () => list.first,
+          );
+          selectAddress(chosen.id);
         }
       },
       onError: (_, __) {},
@@ -244,9 +278,14 @@ class CheckoutController extends GetxController {
         label: a.label,
         street: a.addressLine1,
         city: a.state,
+        phone: a.phone,
+        isDefault: a.isDefault,
       );
 
-  Future<void> _openPaymentWebView(PaymentInitiationEntity initiation) async {
+  Future<void> _openPaymentWebView(
+    PaymentInitiationEntity initiation,
+    OrderSummaryEntity order,
+  ) async {
     final result = await Get.toNamed(
       Routes.MARKETPLACE_PAYMENT_WEBVIEW,
       arguments: PaymentWebViewArgs(
@@ -259,15 +298,16 @@ class CheckoutController extends GetxController {
     );
 
     if (result == PaymentWebViewResult.success) {
-      _navigateToConfirmed(null);
+      _navigateToConfirmed(order);
     } else {
-      Get.snackbar(
-        LocaleKeys.paymentCancelled.tr,
-        LocaleKeys.paymentCancelledMessage.tr,
-        backgroundColor: const Color(0xFFFFF3E0),
-        colorText: const Color(0xFFE65100),
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
+      // The order exists and is unpaid; the outcome screen says so plainly
+      // rather than a snackbar the customer can miss.
+      Get.offAllNamed(
+        Routes.MARKETPLACE_ORDER_CANCELLED,
+        arguments: OrderCancelledArgs(
+          orderNumber: order.orderNumber,
+          total: total,
+        ),
       );
     }
   }
@@ -277,6 +317,7 @@ class CheckoutController extends GetxController {
       Routes.MARKETPLACE_ORDER_CONFIRMED,
       arguments: OrderConfirmedArgs(
         orderId: order?.id,
+        orderNumber: order?.orderNumber,
         total: total,
         paymentMethod: _displayName(selectedPayment.value!),
       ),

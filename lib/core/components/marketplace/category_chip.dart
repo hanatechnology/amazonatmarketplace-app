@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../theme/marketplace_colors.dart';
 import '../../theme/marketplace_typography.dart';
 import '../../theme/marketplace_spacing.dart';
 import '../../theme/marketplace_radius.dart';

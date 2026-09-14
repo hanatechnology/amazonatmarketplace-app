@@ -1,107 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../app/routes/app_routes.dart';
-import '../../../../core/localization/locale_keys.dart';
-import '../../../../core/theme/marketplace_colors.dart';
-import '../../../../core/theme/marketplace_typography.dart';
-import '../../../../core/theme/marketplace_spacing.dart';
-import '../../../../core/theme/marketplace_radius.dart';
 
+import '../../../../app/routes/app_routes.dart';
+import '../../../../core/components/marketplace/checkout/order_outcome_view.dart';
+import '../../../../core/localization/locale_keys.dart';
+import '../../../../domain/entities/marketplace/checkout_args.dart';
+import '../../../controllers/marketplace/main_navigation_controller.dart';
+
+/// The payment did not complete.
+///
+/// Nothing was charged, and this store's items are still in the cart — the
+/// cart is only cleared for a store once its order is actually placed — so the
+/// recovery is the cart, not a second checkout.
 class OrderCancelledPage extends StatelessWidget {
   const OrderCancelledPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: MarketplaceColors.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: MarketplaceSpacing.screenPaddingH,
-          ),
-          child: Column(
-            children: [
-              const Spacer(),
+    final args = Get.arguments as OrderCancelledArgs?;
 
-              // ── Error icon ───────────────────────────────────
-              Container(
-                width: 100,
-                height: 100,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFEBEE),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.cancel_rounded,
-                  size: 60,
-                  color: Color(0xFFD32F2F),
-                ),
-              ),
-              const SizedBox(height: MarketplaceSpacing.lg),
-
-              Text(
-                LocaleKeys.paymentCancelled.tr,
-                style: MarketplaceTypography.screenTitle.copyWith(
-                  color: MarketplaceColors.textPrimary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: MarketplaceSpacing.sm),
-              Text(
-                LocaleKeys.paymentCancelledMessage.tr,
-                style: MarketplaceTypography.bodySecondary,
-                textAlign: TextAlign.center,
-              ),
-
-              const Spacer(),
-
-              // ── CTAs ─────────────────────────────────────────
-              SizedBox(
-                width: double.infinity,
-                height: MarketplaceSpacing.buttonHeight,
-                child: ElevatedButton(
-                  onPressed: () => Get.back(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: MarketplaceColors.primary,
-                    foregroundColor: MarketplaceColors.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(MarketplaceRadius.button),
-                    ),
-                  ),
-                  child: Text(
-                    LocaleKeys.retry.tr,
-                    style: MarketplaceTypography.buttonLabel,
-                  ),
-                ),
-              ),
-              const SizedBox(height: MarketplaceSpacing.sm),
-              SizedBox(
-                width: double.infinity,
-                height: MarketplaceSpacing.buttonHeight,
-                child: OutlinedButton(
-                  onPressed: () => Get.offAllNamed(Routes.MARKETPLACE_MAIN),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: MarketplaceColors.primary,
-                    side: const BorderSide(color: MarketplaceColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(MarketplaceRadius.button),
-                    ),
-                  ),
-                  child: Text(
-                    LocaleKeys.continueShopping.tr,
-                    style: MarketplaceTypography.buttonLabel.copyWith(
-                      color: MarketplaceColors.primary,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: MarketplaceSpacing.lg),
-            ],
-          ),
-        ),
+    return OrderOutcomeView(
+      isSuccess: false,
+      title: LocaleKeys.paymentCancelled.tr,
+      lead: LocaleKeys.paymentCancelledMessage.tr,
+      orderNumber: args?.orderNumber,
+      orderNumberLabel: LocaleKeys.orderNumber.tr,
+      statusLabel: LocaleKeys.statusLabel.tr,
+      statusValue: LocaleKeys.statusCancelled.tr,
+      amountLabel: LocaleKeys.amountLabel.tr,
+      amount: args?.total,
+      primaryLabel: LocaleKeys.backToCart.tr,
+      onPrimary: () => Get.offAllNamed(
+        Routes.MARKETPLACE_MAIN,
+        arguments: {'tab': MainNavigationController.cartTab},
       ),
+      ghostLabel: LocaleKeys.continueShopping.tr,
+      onGhost: () => Get.offAllNamed(Routes.MARKETPLACE_MAIN),
     );
   }
 }

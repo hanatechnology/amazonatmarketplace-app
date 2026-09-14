@@ -1,107 +1,181 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../theme/marketplace_colors.dart';
-import '../../../theme/marketplace_typography.dart';
-import '../../../theme/marketplace_spacing.dart';
-import '../../../theme/marketplace_radius.dart';
-import '../../../localization/locale_keys.dart';
-import 'checkout_order_item_row.dart';
-import 'checkout_section_header.dart';
 
-class CheckoutOrderSummaryDto {
-  const CheckoutOrderSummaryDto({
+import '../../../../domain/entities/marketplace/checkout_args.dart';
+import '../../../localization/locale_keys.dart';
+import '../../../theme/marketplace_palette.dart';
+import '../../../theme/marketplace_radius.dart';
+import '../../../theme/marketplace_spacing.dart';
+import '../../../theme/marketplace_typography.dart';
+import '../../../utils/price_formatter.dart';
+import '../app_network_image.dart';
+import 'checkout_section_label.dart';
+
+/// What the customer is paying for, collapsed by default.
+///
+/// Checkout's bottom bar carries the totals but never the lines behind them, so
+/// there was no way to check what was in the order without going back to the
+/// cart. The header stays tappable at both states — collapsing is how you get
+/// the address and payment steps back on screen on a short device.
+class CheckoutOrderSummary extends StatelessWidget {
+  const CheckoutOrderSummary({
+    super.key,
     required this.items,
-    required this.subtotal,
-    this.isExpanded = false,
+    required this.isExpanded,
     required this.onToggle,
   });
 
-  final List<CheckoutOrderItemDto> items;
-  final double subtotal;
+  final List<CheckoutItemRecord> items;
   final bool isExpanded;
   final VoidCallback onToggle;
-}
-
-/// Collapsible order summary card. Tap header to expand/collapse the item list.
-class CheckoutOrderSummary extends StatelessWidget {
-  const CheckoutOrderSummary({super.key, required this.data});
-
-  final CheckoutOrderSummaryDto data;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: MarketplaceColors.surface,
-        borderRadius: BorderRadius.circular(MarketplaceRadius.card),
-        border: Border.all(color: MarketplaceColors.stroke),
+    final palette = context.palette;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CheckoutSectionLabel(title: LocaleKeys.orderSummary.tr),
+        const SizedBox(height: MarketplaceSpacing.sm),
+        Container(
+          decoration: BoxDecoration(
+            color: palette.surface,
+            borderRadius: BorderRadius.circular(MarketplaceRadius.md + 2),
+            border: Border.all(color: palette.hairline),
+          ),
+          child: Column(
+            children: [
+              InkWell(
+                onTap: onToggle,
+                borderRadius: BorderRadius.circular(MarketplaceRadius.md + 2),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: MarketplaceSpacing.md - 4,
+                    vertical: MarketplaceSpacing.sm + 4,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          LocaleKeys.itemsCountOne.trPluralParams(
+                            LocaleKeys.itemsCount,
+                            items.length,
+                            {'count': '${items.length}'},
+                          ),
+                          style: MarketplaceTypography.rowTitle.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: palette.textPrimary,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        isExpanded
+                            ? LocaleKeys.hideItems.tr
+                            : LocaleKeys.showItems.tr,
+                        style: MarketplaceTypography.rowMeta.copyWith(
+                          color: palette.brand,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: MarketplaceSpacing.xs),
+                      // Chevron, not a directional arrow: it points at the
+                      // sheet's own motion, which is vertical in both scripts.
+                      AnimatedRotation(
+                        turns: isExpanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 180),
+                        child: Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          size: 20,
+                          color: palette.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: isExpanded
+                    ? Column(
+                        children: [
+                          for (final item in items)
+                            _SummaryLine(item: item, palette: palette),
+                        ],
+                      )
+                    : const SizedBox(width: double.infinity),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SummaryLine extends StatelessWidget {
+  const _SummaryLine({required this.item, required this.palette});
+
+  final CheckoutItemRecord item;
+  final MarketplacePalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        MarketplaceSpacing.md - 4,
+        0,
+        MarketplaceSpacing.md - 4,
+        MarketplaceSpacing.sm + 4,
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Collapsed header ──────────────────────────────────
-          InkWell(
-            onTap: data.onToggle,
-            borderRadius: BorderRadius.circular(MarketplaceRadius.card),
-            child: Padding(
-              padding: const EdgeInsets.all(MarketplaceSpacing.md),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: CheckoutSectionHeader(
-                      data: CheckoutSectionHeaderDto(
-                        title: LocaleKeys.orderSummary.tr,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: MarketplaceSpacing.sm),
-                  Text(
-                    LocaleKeys.items.trParams({'count': data.items.length.toString()}),
-                    style: MarketplaceTypography.bodySecondary,
-                  ),
-                  const SizedBox(width: MarketplaceSpacing.sm),
-                  Icon(
-                    data.isExpanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
-                    color: MarketplaceColors.textSecondary,
-                  ),
-                ],
-              ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(MarketplaceRadius.sm),
+            child: AppNetworkImage(
+              imageUrl: item.imageUrl,
+              width: 42,
+              height: 42,
+              borderRadius: MarketplaceRadius.sm,
             ),
           ),
-          // ── Expandable items list ─────────────────────────────
-          AnimatedCrossFade(
-            duration: const Duration(milliseconds: 250),
-            crossFadeState: data.isExpanded
-                ? CrossFadeState.showFirst
-                : CrossFadeState.showSecond,
-            firstChild: Column(
+          const SizedBox(width: MarketplaceSpacing.sm + 2),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Divider(
-                  height: 1,
-                  color: MarketplaceColors.stroke.withValues(alpha: 0.6),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    MarketplaceSpacing.md,
-                    MarketplaceSpacing.sm,
-                    MarketplaceSpacing.md,
-                    MarketplaceSpacing.md,
+                Text(
+                  item.productName,
+                  style: MarketplaceTypography.rowTitle.copyWith(
+                    color: palette.textPrimary,
                   ),
-                  child: Column(
-                    children: [
-                      for (int i = 0; i < data.items.length; i++) ...[
-                        if (i > 0)
-                          const SizedBox(height: MarketplaceSpacing.sm),
-                        CheckoutOrderItemRow(data: data.items[i]),
-                      ],
-                    ],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: MarketplaceSpacing.xxs),
+                // Quantity is a figure: Latin digits, left to right, in Arabic
+                // as much as in English.
+                Text(
+                  '×${item.quantity}',
+                  textDirection: TextDirection.ltr,
+                  style: MarketplaceTypography.rowMeta.copyWith(
+                    color: palette.textMuted,
                   ),
                 ),
               ],
             ),
-            secondChild: const SizedBox.shrink(),
+          ),
+          const SizedBox(width: MarketplaceSpacing.sm),
+          Text(
+            PriceFormatter.format(item.productPrice * item.quantity),
+            textDirection: TextDirection.ltr,
+            style: MarketplaceTypography.rowTitle.copyWith(
+              fontWeight: FontWeight.w700,
+              color: palette.textPrimary,
+            ),
           ),
         ],
       ),

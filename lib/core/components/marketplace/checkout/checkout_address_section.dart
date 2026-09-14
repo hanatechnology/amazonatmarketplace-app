@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../../theme/marketplace_colors.dart';
-import '../../../theme/marketplace_typography.dart';
-import '../../../theme/marketplace_spacing.dart';
-import '../../../theme/marketplace_radius.dart';
+
 import '../../../localization/locale_keys.dart';
-import 'checkout_section_header.dart';
+import '../../../theme/marketplace_palette.dart';
+import '../../../theme/marketplace_typography.dart';
 import 'checkout_address_card.dart';
+import 'checkout_section_label.dart';
 
 class CheckoutAddressSectionDto {
   const CheckoutAddressSectionDto({
@@ -17,6 +16,7 @@ class CheckoutAddressSectionDto {
     required this.onAddNew,
     this.isLoading = false,
     this.hasError = false,
+    this.deliveryUnavailable = false,
   });
 
   final List<CheckoutAddressDto> addresses;
@@ -25,9 +25,13 @@ class CheckoutAddressSectionDto {
   final VoidCallback onAddNew;
   final bool isLoading;
   final bool hasError;
+
+  /// The chosen address is outside this store's delivery zone.
+  final bool deliveryUnavailable;
 }
 
-/// Address selection section: list of saved addresses + "Add new" card.
+/// Step one: where the order goes. Shipping cannot be priced until this is
+/// answered, so it comes before payment.
 class CheckoutAddressSection extends StatelessWidget {
   const CheckoutAddressSection({super.key, required this.data});
 
@@ -38,14 +42,14 @@ class CheckoutAddressSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CheckoutSectionHeader(
-          data: CheckoutSectionHeaderDto(
-            title: LocaleKeys.deliveryAddress.tr,
-            hasError: data.hasError,
-            errorMessage: LocaleKeys.selectAddress.tr,
-          ),
+        CheckoutSectionLabel(
+          title: LocaleKeys.deliveryAddress.tr,
+          // The coverage failure is the more specific of the two, so it wins:
+          // "select an address" reads as nonsense next to one already selected.
+          errorMessage: data.deliveryUnavailable
+              ? LocaleKeys.vendorDoesNotDeliver.tr
+              : (data.hasError ? LocaleKeys.selectAddress.tr : null),
         ),
-        const SizedBox(height: MarketplaceSpacing.sm),
         if (data.isLoading)
           const _AddressShimmer()
         else ...[
@@ -55,48 +59,35 @@ class CheckoutAddressSection extends StatelessWidget {
               isSelected: address.id == data.selectedAddressId,
               onTap: () => data.onSelect(address.id),
             ),
-            const SizedBox(height: MarketplaceSpacing.sm),
+            const SizedBox(height: 9),
           ],
-          _AddNewAddressCard(onTap: data.onAddNew),
+          _AddAddressLink(onTap: data.onAddNew),
         ],
       ],
     );
   }
 }
 
-class _AddNewAddressCard extends StatelessWidget {
-  const _AddNewAddressCard({required this.onTap});
+class _AddAddressLink extends StatelessWidget {
+  const _AddAddressLink({required this.onTap});
 
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(MarketplaceSpacing.md),
-        decoration: BoxDecoration(
-          color: MarketplaceColors.surface,
-          borderRadius: BorderRadius.circular(MarketplaceRadius.card),
-          border: Border.all(
-            color: MarketplaceColors.stroke,
-            style: BorderStyle.solid,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 2),
+        child: Text(
+          '+ ${LocaleKeys.addNewAddress.tr}'.toUpperCase(),
+          style: MarketplaceTypography.linkCaps.copyWith(
+            color: palette.brand,
+            letterSpacing: MarketplaceTypography.isArabic ? 0 : 1.1,
           ),
-        ),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.add_circle_outline,
-              color: MarketplaceColors.primary,
-            ),
-            const SizedBox(width: MarketplaceSpacing.sm),
-            Text(
-              LocaleKeys.addNewAddress.tr,
-              style: MarketplaceTypography.body.copyWith(
-                color: MarketplaceColors.primary,
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -108,19 +99,21 @@ class _AddressShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: List.generate(
-        2,
-        (_) => Padding(
-          padding: const EdgeInsets.only(bottom: MarketplaceSpacing.sm),
-          child: Shimmer.fromColors(
-            baseColor: MarketplaceColors.stroke.withValues(alpha: 0.4),
-            highlightColor: MarketplaceColors.stroke.withValues(alpha: 0.15),
+    final palette = context.palette;
+
+    return Shimmer.fromColors(
+      baseColor: palette.shimmerBase,
+      highlightColor: palette.shimmerHighlight,
+      child: Column(
+        children: List.generate(
+          2,
+          (_) => Padding(
+            padding: const EdgeInsets.only(bottom: 9),
             child: Container(
               height: 76,
               decoration: BoxDecoration(
-                color: MarketplaceColors.deleteBackground,
-                borderRadius: BorderRadius.circular(MarketplaceRadius.card),
+                color: palette.shimmerBase,
+                borderRadius: BorderRadius.circular(20),
               ),
             ),
           ),

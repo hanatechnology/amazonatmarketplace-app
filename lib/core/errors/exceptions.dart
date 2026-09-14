@@ -27,7 +27,7 @@ sealed class AppException implements Exception {
 
 /// Network connectivity issues.
 final class NetworkException extends AppException {
-  const NetworkException([String message = 'No internet connection']) : super(message);
+  const NetworkException([super.message = 'No internet connection']);
 }
 
 /// Server returned an error response.
@@ -44,26 +44,22 @@ final class ServerException extends AppException {
 
 /// Request timed out.
 final class TimeoutException extends AppException {
-  const TimeoutException([String message = 'Request timed out']) : super(message);
+  const TimeoutException([super.message = 'Request timed out']);
 }
 
 /// Unauthorized — 401.
 final class UnauthorizedException extends AppException {
-  const UnauthorizedException([
-    String message = 'Unauthorized',
-    String? code,
-    Map<String, dynamic>? args,
-  ]) : super(message, code: code, args: args);
+  const UnauthorizedException(super.message, {super.code, super.args});
 }
 
 /// Forbidden — 403.
 final class ForbiddenException extends AppException {
-  const ForbiddenException([String message = 'Access denied']) : super(message);
+  const ForbiddenException([super.message = 'Access denied']);
 }
 
 /// Resource not found — 404.
 final class NotFoundException extends AppException {
-  const NotFoundException([String message = 'Resource not found']) : super(message);
+  const NotFoundException([super.message = 'Resource not found']);
 }
 
 /// Conflict — 409.
@@ -73,11 +69,7 @@ final class ConflictException extends AppException {
 
 /// Too many requests — 429.
 final class RateLimitException extends AppException {
-  const RateLimitException([
-    String message = 'Too many requests',
-    String? code,
-    Map<String, dynamic>? args,
-  ]) : super(message, code: code, args: args);
+  const RateLimitException(super.message, {super.code, super.args});
 
   /// Seconds the caller must wait, when the backend supplies it
   /// (`otp_resend_too_soon` carries `args.retry_after_seconds`).
@@ -96,17 +88,17 @@ final class ValidationException extends AppException {
 
 /// JSON parsing failed.
 final class ParseException extends AppException {
-  const ParseException([String message = 'Failed to parse response']) : super(message);
+  const ParseException([super.message = 'Failed to parse response']);
 }
 
 /// Local storage error.
 final class StorageException extends AppException {
-  const StorageException([String message = 'Storage error']) : super(message);
+  const StorageException([super.message = 'Storage error']);
 }
 
 /// Authentication state error.
 final class AuthException extends AppException {
-  const AuthException([String message = 'Authentication error']) : super(message);
+  const AuthException([super.message = 'Authentication error']);
 }
 
 /// File upload/download error.
@@ -116,7 +108,7 @@ final class FileException extends AppException {
 
 /// Generic unexpected error.
 final class UnexpectedException extends AppException {
-  const UnexpectedException([String message = 'An unexpected error occurred']) : super(message);
+  const UnexpectedException([super.message = 'An unexpected error occurred']);
 }
 
 /// Bad request — 400.

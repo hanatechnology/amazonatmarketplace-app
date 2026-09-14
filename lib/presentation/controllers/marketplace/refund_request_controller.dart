@@ -19,6 +19,13 @@ class RefundItemSelection {
   int quantity;
 }
 
+/// Why a payout field failed, kept as a cause rather than a finished sentence.
+///
+/// The message is resolved at render time so it follows the app language: the
+/// generic copy comes from `LocaleKeys`, the specific copy from the backend's
+/// `validation_message_ar` / `_en` pair — both of which change with the locale.
+enum PayoutFieldIssue { required, invalid }
+
 const String kRefundReasons = 'refundReasons';
 const String kPayoutMethods = 'payoutMethods';
 const String kSubmitRefund = 'submitRefund';
@@ -46,10 +53,18 @@ class RefundRequestController
   /// payout field key → current value, for SELECT fields with no text input
   final payoutValues = <String, String>{}.obs;
 
+  /// Form errors hold a `LocaleKeys` key, not translated text — the page calls
+  /// `.tr` on render, so a mid-form language switch retranslates them.
   final reasonError = RxnString();
   final itemsError = RxnString();
   final payoutMethodError = RxnString();
-  final payoutFieldErrors = <String, String>{}.obs;
+
+  /// payout field key → why it failed
+  final payoutFieldErrors = <String, PayoutFieldIssue>{}.obs;
+
+  /// Two steps, because the payout fields are backend-driven and neither half
+  /// fits one screen: 0 = what and why, 1 = where the money goes.
+  final step = 0.obs;
 
   @override
   void onInit() {
@@ -100,6 +115,53 @@ class RefundRequestController
   }
 
   bool get isSubmitting => getState<RefundEntity>(kSubmitRefund).isLoading;
+
+  /// What the customer is asking for, before the admin deducts transport.
+  ///
+  /// An estimate, and labelled as one: `transport_cost` is set by the admin
+  /// after the request, so the net payout is never knowable at this point.
+  double get estimatedAmount {
+    if (refundType.value == RefundType.full) return order.totalAmount;
+    var total = 0.0;
+    for (final item in order.items) {
+      final selection = itemSelections[item.id];
+      if (selection == null || !selection.selected) continue;
+      total += item.unitPrice * selection.quantity;
+    }
+    return total;
+  }
+
+  int get selectedItemCount => refundType.value == RefundType.full
+      ? order.items.length
+      : itemSelections.values.where((entry) => entry.selected).length;
+
+  /// Everything step one is responsible for.
+  bool validateStep1() {
+    var valid = true;
+
+    if (reasonController.text.trim().isEmpty) {
+      reasonError.value = LocaleKeys.fieldRequired;
+      valid = false;
+    } else {
+      reasonError.value = null;
+    }
+
+    if (refundType.value == RefundType.partial && _selectedItems.isEmpty) {
+      itemsError.value = LocaleKeys.selectAtLeastOneItem;
+      valid = false;
+    } else {
+      itemsError.value = null;
+    }
+
+    return valid;
+  }
+
+  void goToStep2() {
+    if (!validateStep1()) return;
+    step.value = 1;
+  }
+
+  void backToStep1() => step.value = 0;
 
   // ── Form mutations ────────────────────────────────────────
 
@@ -161,8 +223,8 @@ class RefundRequestController
   /// Mirrors the web's `validatePayoutFields`: required first, then the
   /// backend-supplied regex. An unparseable regex is skipped rather than
   /// blocking submission.
-  Map<String, String> _validatePayoutFields() {
-    final errors = <String, String>{};
+  Map<String, PayoutFieldIssue> _validatePayoutFields() {
+    final errors = <String, PayoutFieldIssue>{};
     final method = selectedPayoutMethod;
     if (method == null) return errors;
 
@@ -170,7 +232,7 @@ class RefundRequestController
       final value = _payoutValueFor(field.fieldKey).trim();
 
       if (field.isRequired && value.isEmpty) {
-        errors[field.fieldKey] = LocaleKeys.fieldRequired.tr;
+        errors[field.fieldKey] = PayoutFieldIssue.required;
         continue;
       }
       if (value.isEmpty) continue;
@@ -179,14 +241,24 @@ class RefundRequestController
       if (pattern == null || pattern.isEmpty) continue;
       try {
         if (!RegExp(pattern).hasMatch(value)) {
-          errors[field.fieldKey] =
-              field.validationMessage ?? LocaleKeys.fieldInvalid.tr;
+          errors[field.fieldKey] = PayoutFieldIssue.invalid;
         }
       } on FormatException {
         // Backend shipped an invalid regex — do not block the customer.
       }
     }
     return errors;
+  }
+
+  /// The message for a failed payout field, in the language showing right now.
+  /// The backend's own wording wins when it shipped one for this locale.
+  String? payoutFieldErrorText(PayoutMethodFieldEntity field) {
+    return switch (payoutFieldErrors[field.fieldKey]) {
+      null => null,
+      PayoutFieldIssue.required => LocaleKeys.fieldRequired.tr,
+      PayoutFieldIssue.invalid =>
+        field.validationMessage ?? LocaleKeys.fieldInvalid.tr,
+    };
   }
 
   String _payoutValueFor(String fieldKey) =>
@@ -197,17 +269,17 @@ class RefundRequestController
 
     final reason = reasonController.text.trim();
     if (reason.isEmpty) {
-      reasonError.value = LocaleKeys.fieldRequired.tr;
+      reasonError.value = LocaleKeys.fieldRequired;
       valid = false;
     }
 
     if (refundType.value == RefundType.partial && _selectedItems.isEmpty) {
-      itemsError.value = LocaleKeys.selectAtLeastOneItem.tr;
+      itemsError.value = LocaleKeys.selectAtLeastOneItem;
       valid = false;
     }
 
     if (selectedPayoutMethodId.value == null) {
-      payoutMethodError.value = LocaleKeys.fieldRequired.tr;
+      payoutMethodError.value = LocaleKeys.fieldRequired;
       valid = false;
     }
 

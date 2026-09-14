@@ -18,6 +18,10 @@ abstract class MarketplaceRadius {
   static const double bottomNav = 30.0;
   static const double card = 15.0;
   static const double cardImage = 10.0;
+
+  /// The product photo plate — grid card. Larger than [cardImage] because the
+  /// plate is now the card itself, with no container rounded around it.
+  static const double productPlate = 16.0;
   static const double cartItem = 14.0;
   static const double button = 20.0;
   static const double smallButton = 15.0;

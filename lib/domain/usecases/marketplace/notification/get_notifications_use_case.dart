@@ -2,6 +2,7 @@ import 'package:marketplace/core/states/app_state.dart';
 import 'package:marketplace/data/repositories/notification_repository.dart';
 import 'package:marketplace/domain/entities/marketplace/notification_entity.dart';
 import 'package:marketplace/domain/usecases/base_use_case.dart';
+import '../../../../core/errors/error_messages.dart';
 
 /// Loads one page of notifications.
 /// `input.filters` carries the read filter: null = all, false = unread, true = read.
@@ -31,7 +32,7 @@ class GetNotificationsUseCase
           totalItems: page.totalItems,
         ),
       ),
-      onFailure: (exception) => AppStateError(exception.message),
+      onFailure: (exception) => AppStateError(exception.localizedMessage),
     );
   }
 }

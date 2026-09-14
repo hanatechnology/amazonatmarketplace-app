@@ -27,7 +27,7 @@ class EmptyCartView extends StatelessWidget {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: MarketplaceColors.secondary.withOpacity(0.3),
+                color: MarketplaceColors.secondary.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
               ),
               child: const Icon(

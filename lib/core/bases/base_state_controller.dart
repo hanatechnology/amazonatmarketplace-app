@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 import '../states/app_state.dart';
 import '../network/result.dart';
 import '../errors/exceptions.dart';
+import '../errors/error_messages.dart';
+import '../localization/locale_keys.dart';
 
 /// Generic base controller with state management helpers.
 /// [U] is the primary use case type injected via GetX.
@@ -66,7 +68,10 @@ abstract class BaseStateController<U> extends GetxController {
         _handleError(result.message);
       }
     } catch (e) {
-      final message = e is AppException ? e.message : e.toString();
+      // Never surface a raw exception string: it is English-only and written
+      // for developers.
+      final message =
+          e is AppException ? e.localizedMessage : LocaleKeys.errorUnexpected.tr;
       _getOrCreate<T>(key).value = AppStateError(message);
       onError?.call(message, null);
       _handleError(message);
@@ -125,7 +130,10 @@ abstract class BaseStateController<U> extends GetxController {
         _handleError(result.message);
       }
     } catch (e) {
-      final message = e is AppException ? e.message : e.toString();
+      // Never surface a raw exception string: it is English-only and written
+      // for developers.
+      final message =
+          e is AppException ? e.localizedMessage : LocaleKeys.errorUnexpected.tr;
       _getOrCreate<List<T>>(key).value = AppStateError(message);
     }
   }
@@ -144,7 +152,7 @@ abstract class BaseStateController<U> extends GetxController {
   }) =>
       result.fold(
         onSuccess: (data) => AppStateSuccess(mapper(data), message: successMessage),
-        onFailure: (e) => AppStateError(e.message),
+        onFailure: (e) => AppStateError(e.localizedMessage),
       );
 
   /// Convert a [Result<T>] directly to [AppState<T>].
@@ -154,7 +162,7 @@ abstract class BaseStateController<U> extends GetxController {
   }) =>
       result.fold(
         onSuccess: (data) => AppStateSuccess(data, message: successMessage),
-        onFailure: (e) => AppStateError(e.message),
+        onFailure: (e) => AppStateError(e.localizedMessage),
       );
 }
 
@@ -176,7 +184,10 @@ class StateOperation<T> {
     try {
       controller.stateFor<T>(key).value = await operation();
     } catch (e) {
-      final message = e is AppException ? e.message : e.toString();
+      // Never surface a raw exception string: it is English-only and written
+      // for developers.
+      final message =
+          e is AppException ? e.localizedMessage : LocaleKeys.errorUnexpected.tr;
       controller.stateFor<T>(key).value = AppStateError<T>(message);
     }
   }

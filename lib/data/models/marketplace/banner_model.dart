@@ -28,13 +28,28 @@ class BannerModel {
     return BannerModel(
       id: json['id'].toString(),
       type: json['type'] as String? ?? 'IMAGE_LINK',
-      imageUrl: json['image_url'] as String? ?? '',
+      // The client endpoint only lists banners that carry mobile artwork, and
+      // that artwork is what the hero shows — it is cut for a nearly-square
+      // block, where the 3:1 web image would lose most of itself to the crop.
+      // The web URL stays the fallback for a banner served by an older build.
+      imageUrl: _firstNonEmpty([
+        json['mobile_image_url'] as String?,
+        json['image_url'] as String?,
+      ]),
       sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       titleAr: json['title_ar'] as String?,
       titleEn: json['title_en'] as String?,
       linkUrl: json['link_url'] as String?,
       productId: json['product_id'] as String?,
     );
+  }
+
+  static String _firstNonEmpty(List<String?> candidates) {
+    for (final value in candidates) {
+      final trimmed = value?.trim();
+      if (trimmed != null && trimmed.isNotEmpty) return trimmed;
+    }
+    return '';
   }
 
   BannerEntity toEntity() {

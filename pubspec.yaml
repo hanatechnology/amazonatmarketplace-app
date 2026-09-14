@@ -25,9 +25,13 @@ dependencies:
 
   # Images
   cached_network_image: ^3.3.0
+  # Writes a downloaded receipt into the device photo library.
+  gal: ^2.3.3
 
   # Utils
   equatable: ^2.0.5
+  # Reads the installed version/build number for the account page footer.
+  package_info_plus: ^9.0.1
 
   # UI
   shimmer: ^3.0.0
@@ -37,6 +41,11 @@ dependencies:
   url_launcher: ^6.3.2
   firebase_core: ^4.13.0
   firebase_messaging: ^16.5.0
+  google_maps_flutter: ^2.18.0
+  # Reverse geocoding for the map picker (device geocoder, no API key)
+  # and the coordinate read behind its recenter button.
+  geocoding: ^5.0.0
+  geolocator: ^14.0.2
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +58,7 @@ flutter:
   assets:
     - assets/fonts/
     - assets/icons/
+    - assets/images/
 
   fonts:
     - family: Inter
@@ -61,3 +71,37 @@ flutter:
           weight: 600
         - asset: assets/fonts/Inter-Bold.ttf
           weight: 700
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-400.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-500.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-600.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-700.ttf
+          weight: 700
+    - family: InstrumentSerif
+      fonts:
+        - asset: assets/fonts/InstrumentSerif-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/InstrumentSerif-Italic.ttf
+          weight: 400
+          style: italic
+    # Arabic counterparts. IBM Plex Sans Arabic carries the same humanist,
+    # low-contrast build as Plus Jakarta Sans; Amiri is the naskh answer to
+    # Instrument Serif's editorial voice.
+    - family: IBMPlexSansArabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-400.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSansArabic-500.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic-600.ttf
+          weight: 600
+        - asset: assets/fonts/IBMPlexSansArabic-700.ttf
+          weight: 700
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+          weight: 400

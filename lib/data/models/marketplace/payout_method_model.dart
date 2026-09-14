@@ -1,16 +1,8 @@
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:marketplace/domain/entities/marketplace/payout_method_entity.dart';
 
-bool _isArabic() => Get.locale?.languageCode == 'ar';
-
-String _localized(String? ar, String? en) {
-  final arabic = ar ?? '';
-  final english = en ?? '';
-  return _isArabic()
-      ? (arabic.isNotEmpty ? arabic : english)
-      : (english.isNotEmpty ? english : arabic);
-}
+// Both languages are carried into the entity untouched — the entity picks the
+// one for the active locale on read, so the form re-renders in the new
+// language when the customer switches it mid-form.
 
 class PayoutFieldOptionModel {
   const PayoutFieldOptionModel({
@@ -33,7 +25,8 @@ class PayoutFieldOptionModel {
 
   PayoutFieldOptionEntity toEntity() => PayoutFieldOptionEntity(
         value: value,
-        label: _localized(labelAr, labelEn),
+        labelAr: labelAr,
+        labelEn: labelEn,
       );
 }
 
@@ -90,19 +83,19 @@ class PayoutMethodFieldModel {
   }
 
   PayoutMethodFieldEntity toEntity() {
-    final placeholder = _localized(placeholderAr, placeholderEn);
-    final message = _localized(validationMessageAr, validationMessageEn);
-
     return PayoutMethodFieldEntity(
       id: id,
       fieldKey: fieldKey,
-      label: _localized(labelAr, labelEn),
+      labelAr: labelAr,
+      labelEn: labelEn,
       fieldType: PayoutFieldType.fromWire(fieldType),
       isRequired: isRequired,
       sortOrder: sortOrder,
-      placeholder: placeholder.isEmpty ? null : placeholder,
+      placeholderAr: placeholderAr,
+      placeholderEn: placeholderEn,
       validationRegex: validationRegex,
-      validationMessage: message.isEmpty ? null : message,
+      validationMessageAr: validationMessageAr,
+      validationMessageEn: validationMessageEn,
       options: options.map((option) => option.toEntity()).toList(),
     );
   }
@@ -148,7 +141,8 @@ class PayoutMethodModel {
 
     return PayoutMethodEntity(
       id: id,
-      name: _localized(nameAr, nameEn),
+      nameAr: nameAr,
+      nameEn: nameEn,
       sortOrder: sortOrder,
       iconUrl: iconUrl,
       fields: sorted.map((field) => field.toEntity()).toList(),

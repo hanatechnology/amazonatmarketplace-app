@@ -5,6 +5,10 @@ class ProductEntity extends Equatable {
   final String name;
   final String sellerName;
   final String sellerId;
+
+  /// Seller's logo. Empty when the payload carried none — every surface that
+  /// shows it falls back to a storefront glyph rather than a broken image.
+  final String sellerLogoUrl;
   final double price;
   final double? originalPrice;
   final int? discountPercent;
@@ -19,6 +23,7 @@ class ProductEntity extends Equatable {
     required this.name,
     required this.sellerName,
     required this.sellerId,
+    this.sellerLogoUrl = '',
     required this.price,
     this.originalPrice,
     this.discountPercent,
@@ -35,6 +40,7 @@ class ProductEntity extends Equatable {
         name,
         sellerName,
         sellerId,
+        sellerLogoUrl,
         price,
         originalPrice,
         discountPercent,

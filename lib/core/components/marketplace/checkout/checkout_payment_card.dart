@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../localization/locale_keys.dart';
+
 import '../../../../domain/entities/marketplace/order_entity.dart';
-import '../../../theme/marketplace_colors.dart';
+import '../../../localization/locale_keys.dart';
+import '../../../theme/marketplace_palette.dart';
 import '../../../theme/marketplace_typography.dart';
-import '../../../theme/marketplace_spacing.dart';
-import '../../../theme/marketplace_radius.dart';
 
 /// Presentation helpers for the API's payment methods.
 ///
@@ -24,18 +23,32 @@ extension PaymentMethodDisplay on PaymentMethod {
         PaymentMethod.unknown => LocaleKeys.statusUnknown.tr,
       };
 
+  /// What happens after "Place order" — the one thing a customer cannot guess
+  /// from a brand name.
+  String? get hint => switch (this) {
+        PaymentMethod.payOnDelivery => LocaleKeys.payCodHint.tr,
+        PaymentMethod.edfali => LocaleKeys.payEdfaliHint.tr,
+        PaymentMethod.sadad ||
+        PaymentMethod.paypal ||
+        PaymentMethod.stripe ||
+        PaymentMethod.plutu =>
+          LocaleKeys.payGatewayHint.tr,
+        PaymentMethod.unknown => null,
+      };
+
   IconData get icon => switch (this) {
-        PaymentMethod.payOnDelivery => Icons.local_shipping_outlined,
+        PaymentMethod.payOnDelivery => Icons.payments_outlined,
         PaymentMethod.sadad => Icons.account_balance_outlined,
         PaymentMethod.paypal => Icons.payment_outlined,
         PaymentMethod.stripe => Icons.credit_card_outlined,
         PaymentMethod.plutu => Icons.account_balance_wallet_outlined,
-        PaymentMethod.edfali => Icons.sms_outlined,
+        PaymentMethod.edfali => Icons.smartphone_outlined,
         PaymentMethod.unknown => Icons.payment_outlined,
       };
 }
 
-/// Single payment method radio card.
+/// One payment option. Selected takes a brand hairline and the sunken wash;
+/// the icon tile inverts so it stays legible against it.
 class CheckoutPaymentCard extends StatelessWidget {
   const CheckoutPaymentCard({
     super.key,
@@ -50,58 +63,103 @@ class CheckoutPaymentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final hint = method.hint;
+
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        constraints: const BoxConstraints(minHeight: 56),
-        padding: const EdgeInsets.symmetric(
-          horizontal: MarketplaceSpacing.md,
-          vertical: MarketplaceSpacing.sm,
-        ),
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
         decoration: BoxDecoration(
-          color: isSelected
-              ? MarketplaceColors.secondary.withValues(alpha: 0.2)
-              : MarketplaceColors.surface,
-          borderRadius: BorderRadius.circular(MarketplaceRadius.card),
+          color: isSelected ? palette.surfaceSunken : palette.surface,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? MarketplaceColors.primary
-                : MarketplaceColors.stroke,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? palette.brand : palette.hairline,
+            width: isSelected ? 1.5 : 1,
           ),
         ),
         child: Row(
           children: [
-            Icon(
-              method.icon,
-              size: 32,
-              color: isSelected
-                  ? MarketplaceColors.primary
-                  : MarketplaceColors.textSecondary,
-            ),
-            const SizedBox(width: MarketplaceSpacing.md),
-            Expanded(
-              child: Text(
-                method.displayName,
-                style: MarketplaceTypography.body.copyWith(
-                  color: isSelected
-                      ? MarketplaceColors.primary
-                      : MarketplaceColors.textBody,
-                ),
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color:
+                    isSelected ? palette.surface : palette.surfaceSunken,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(
+                method.icon,
+                size: 16,
+                color: isSelected ? palette.brand : palette.textSecondary,
               ),
             ),
-            Icon(
-              isSelected
-                  ? Icons.check_circle_rounded
-                  : Icons.radio_button_unchecked,
-              color: isSelected
-                  ? MarketplaceColors.primary
-                  : MarketplaceColors.stroke,
+            const SizedBox(width: 11),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    method.displayName,
+                    style: MarketplaceTypography.rowTitle.copyWith(
+                      color: palette.textPrimary,
+                    ),
+                  ),
+                  if (hint != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      hint,
+                      style: MarketplaceTypography.rowMeta.copyWith(
+                        color: palette.textMuted,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
+            _Radio(isSelected: isSelected),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _Radio extends StatelessWidget {
+  const _Radio({required this.isSelected});
+
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Container(
+      width: 19,
+      height: 19,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isSelected ? palette.brand : palette.hairline,
+          width: 1.6,
+        ),
+      ),
+      child: isSelected
+          ? Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: palette.brand,
+                shape: BoxShape.circle,
+              ),
+            )
+          : null,
     );
   }
 }

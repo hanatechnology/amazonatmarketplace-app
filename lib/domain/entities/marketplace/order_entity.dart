@@ -94,6 +94,7 @@ class OrderEntity extends Equatable {
     required this.paymentMethod,
     required this.vendorId,
     required this.vendorName,
+    this.vendorLogoUrl = '',
     required this.subtotal,
     required this.shippingFee,
     required this.totalAmount,
@@ -111,6 +112,10 @@ class OrderEntity extends Equatable {
   final PaymentMethod paymentMethod;
   final String vendorId;
   final String vendorName;
+
+  /// Store logo. Empty on the orders list, which does not carry the vendor
+  /// block — only the detail payload does.
+  final String vendorLogoUrl;
   final double subtotal;
   final double shippingFee;
   final double totalAmount;
@@ -120,9 +125,25 @@ class OrderEntity extends Equatable {
   final DateTime? refundedAt;
   final AddressEntity? shippingAddress;
 
-  /// Refund requests raised against this order. Only the detail endpoint
-  /// returns them, so this is always empty on a list item.
+  /// Refund requests raised against this order. Returned by both `GET /orders`
+  /// and `GET /orders/{id}` — the list needs them so a delivered order with a
+  /// refund in flight does not read as a plain delivered order, and so
+  /// [canRequestRefund] does not offer a second request the API will reject.
   final List<RefundEntity> refunds;
+
+  /// The refund worth showing on a card: the one still being handled if there
+  /// is one, otherwise the most recent outcome. An order can hold several over
+  /// time — a rejection does not block re-requesting — and a card has room for
+  /// exactly one.
+  RefundEntity? get headlineRefund {
+    if (refunds.isEmpty) return null;
+    final active = refunds.where((refund) => refund.status.isActive).toList()
+      ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+    if (active.isNotEmpty) return active.first;
+    final all = [...refunds]
+      ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+    return all.first;
+  }
 
   int get itemCount => items.length;
 
@@ -146,6 +167,7 @@ class OrderEntity extends Equatable {
         paymentMethod,
         vendorId,
         vendorName,
+        vendorLogoUrl,
         subtotal,
         shippingFee,
         totalAmount,

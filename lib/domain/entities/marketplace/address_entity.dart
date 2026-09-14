@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'address_location.dart';
+
 class AddressEntity extends Equatable {
   const AddressEntity({
     required this.id,
@@ -13,6 +15,7 @@ class AddressEntity extends Equatable {
     required this.country,
     this.postalCode,
     required this.isDefault,
+    this.location,
   });
 
   final String id;
@@ -27,6 +30,10 @@ class AddressEntity extends Equatable {
   final String? postalCode;
   final bool isDefault;
 
+  /// Required by the create endpoint; nullable here because an address saved
+  /// before this field existed comes back without one.
+  final AddressLocation? location;
+
   AddressEntity copyWith({
     String? id,
     String? label,
@@ -39,6 +46,7 @@ class AddressEntity extends Equatable {
     String? country,
     String? postalCode,
     bool? isDefault,
+    AddressLocation? location,
   }) {
     return AddressEntity(
       id: id ?? this.id,
@@ -52,12 +60,13 @@ class AddressEntity extends Equatable {
       country: country ?? this.country,
       postalCode: postalCode ?? this.postalCode,
       isDefault: isDefault ?? this.isDefault,
+      location: location ?? this.location,
     );
   }
 
   @override
   List<Object?> get props => [
         id, label, fullName, phone, addressLine1, addressLine2,
-        cityId, state, country, postalCode, isDefault,
+        cityId, state, country, postalCode, isDefault, location,
       ];
 }

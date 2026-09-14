@@ -33,12 +33,14 @@ class OrderSummaryModel {
     required this.status,
     required this.total,
     required this.createdAt,
+    this.orderNumber,
   });
 
   final String id;
   final String status;
   final double total;
   final DateTime createdAt;
+  final String? orderNumber;
 
   factory OrderSummaryModel.fromJson(Map<String, dynamic> json) =>
       OrderSummaryModel(
@@ -51,6 +53,7 @@ class OrderSummaryModel {
         createdAt:
             DateTime.tryParse(json['created_at'] as String? ?? '') ??
                 DateTime.now(),
+        orderNumber: json['order_number'] as String?,
       );
 
   OrderSummaryEntity toEntity() => OrderSummaryEntity(
@@ -58,6 +61,7 @@ class OrderSummaryModel {
         status: status,
         total: total,
         createdAt: createdAt,
+        orderNumber: orderNumber,
       );
 }
 

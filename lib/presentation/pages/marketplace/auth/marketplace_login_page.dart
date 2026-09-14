@@ -1,305 +1,335 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../../../core/theme/marketplace_colors.dart';
-import '../../../../core/theme/marketplace_typography.dart';
-import '../../../../core/theme/marketplace_spacing.dart';
-import '../../../../core/theme/marketplace_radius.dart';
+
+import '../../../../core/localization/locale_controller.dart';
 import '../../../../core/localization/locale_keys.dart';
+import '../../../../core/theme/marketplace_palette.dart';
+import '../../../../core/theme/marketplace_radius.dart';
+import '../../../../core/theme/marketplace_typography.dart';
+import '../../../../core/theme/status_tone.dart';
 import '../../../../core/utils/phone_utils.dart';
 import '../../../controllers/marketplace/auth_controller.dart';
+import '../../../../core/components/marketplace/sticky_back_bar.dart';
 
+/// Phone entry — the only way into the app.
+///
+/// `POST /auth/request-otp` is public and doubles as sign-in, sign-up trigger
+/// and resend. An unknown number comes back needing a name and email, which is
+/// why the note under the field warns about it before the customer hits it.
+///
+/// The language control is not decoration: the backend picks the Arabic or
+/// English SMS template from `Accept-Language`, and on a first signup there is
+/// no account row yet to read a preference from.
 class MarketplaceLoginPage extends GetView<AuthController> {
   const MarketplaceLoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+
     return Scaffold(
-      backgroundColor: MarketplaceColors.surface,
-      body: SafeArea(
+      backgroundColor: palette.background,
+      body: StickyBackBar(
+        child:  SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: MarketplaceSpacing.screenPaddingH,
-          ),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: MarketplaceSpacing.md),
-
-
-
-              const SizedBox(height: MarketplaceSpacing.xxl),
-
-              // ── Brand Icon + App Name ────────────────────
-              Center(
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: const BoxDecoration(
-                    color: MarketplaceColors.secondary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.shopping_bag_rounded,
-                    size: 36,
-                    color: MarketplaceColors.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(height: MarketplaceSpacing.md),
-              Center(
-                child: Text(
-                  LocaleKeys.appName.tr,
-                  style: MarketplaceTypography.screenTitle.copyWith(
-                    fontSize: 32,
-                    color: MarketplaceColors.primary,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: MarketplaceSpacing.sm),
-
-              // ── Title & Subtitle ────────────────────────
-              Center(
-                child: Text(
-                  LocaleKeys.loginTitle.tr,
-                  style: MarketplaceTypography.sectionHeading,
-                ),
-              ),
-              const SizedBox(height: MarketplaceSpacing.sm),
-              Center(
-                child: Text(
-                  LocaleKeys.loginSubtitle.tr,
-                  style: MarketplaceTypography.descriptionBody,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
-              const SizedBox(height: MarketplaceSpacing.xl),
-
-              // ── Phone Number Field ──────────────────────
+              const _BackButton(),
+              const SizedBox(height: 14),
               Text(
-                LocaleKeys.phoneNumber.tr,
-                style: MarketplaceTypography.cardTitle.copyWith(
-                  color: MarketplaceColors.textBody,
+                LocaleKeys.loginTitle.tr,
+                style: MarketplaceTypography.heroDisplay.copyWith(
+                  fontSize: 30,
+                  color: palette.textPrimary,
                 ),
               ),
-              const SizedBox(height: MarketplaceSpacing.sm),
-              Obx(() => TextField(
-                controller: controller.phoneController,
-                focusNode: controller.phoneFocusNode,
-                keyboardType: TextInputType.phone,
-                style: MarketplaceTypography.body,
-                decoration: InputDecoration(
-                  hintText: LocaleKeys.phoneHint.tr,
-                  errorText: controller.phoneError.value,
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Libya — the API accepts E.164 only, and the
-                        // controller normalizes whatever is typed to +218.
-                        Text(
-                          '${PhoneUtils.countryCode} ',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        SizedBox(
-                          height: 24,
-                          child: VerticalDivider(
-                            color: MarketplaceColors.stroke,
-                            width: 1,
+              const SizedBox(height: 8),
+              Text(
+                LocaleKeys.loginSubtitle.tr,
+                style: MarketplaceTypography.rowMeta.copyWith(
+                  fontSize: 12.5,
+                  height: 1.7,
+                  color: palette.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                LocaleKeys.phoneNumber.tr.toUpperCase(),
+                style: MarketplaceTypography.labelCaps.copyWith(
+                  color: palette.textMuted,
+                  letterSpacing: MarketplaceTypography.isArabic ? 0 : 1.2,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const PhoneField(),
+              const SizedBox(height: 18),
+              const _SmsLanguageToggle(),
+              const SizedBox(height: 18),
+              _FirstTimeNote(),
+              const SizedBox(height: 22),
+              const _NextSteps(),
+              const SizedBox(height: 26),
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed:
+                        controller.isLoading ? null : controller.sendOtp,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: palette.brand,
+                      foregroundColor: palette.onBrand,
+                      disabledBackgroundColor: palette.surfaceSunken,
+                      disabledForegroundColor: palette.textMuted,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(MarketplaceRadius.full),
+                      ),
+                    ),
+                    child: controller.isLoading
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: palette.onBrand,
+                            ),
+                          )
+                        : Text(
+                            LocaleKeys.sendOtp.tr,
+                            style:
+                                MarketplaceTypography.buttonLabel.copyWith(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                onChanged: (_) => controller.phoneError.value = null,
-              )),
-
-              // ── Sign-up fields (revealed on registration_required) ──
-              Obx(() {
-                if (!controller.needsRegistration.value) {
-                  return const SizedBox.shrink();
-                }
-                return Padding(
-                  padding: const EdgeInsets.only(top: MarketplaceSpacing.md),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        LocaleKeys.signUpPrompt.tr,
-                        style: MarketplaceTypography.descriptionBody,
-                      ),
-                      const SizedBox(height: MarketplaceSpacing.md),
-                      TextField(
-                        controller: controller.firstNameController,
-                        textInputAction: TextInputAction.next,
-                        style: MarketplaceTypography.body,
-                        decoration: InputDecoration(
-                          labelText: LocaleKeys.firstNameLabel.tr,
-                          hintText: LocaleKeys.firstNameHint.tr,
-                          errorText: controller.firstNameError.value,
-                        ),
-                        onChanged: (_) =>
-                            controller.firstNameError.value = null,
-                      ),
-                      const SizedBox(height: MarketplaceSpacing.md),
-                      TextField(
-                        controller: controller.lastNameController,
-                        textInputAction: TextInputAction.next,
-                        style: MarketplaceTypography.body,
-                        decoration: InputDecoration(
-                          labelText: LocaleKeys.lastNameOptional.tr,
-                          hintText: LocaleKeys.lastNameHint.tr,
-                        ),
-                      ),
-                      const SizedBox(height: MarketplaceSpacing.md),
-                      TextField(
-                        controller: controller.emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.done,
-                        style: MarketplaceTypography.body,
-                        decoration: InputDecoration(
-                          labelText: LocaleKeys.email.tr,
-                          hintText: LocaleKeys.emailHint.tr,
-                          errorText: controller.emailError.value,
-                        ),
-                        onChanged: (_) => controller.emailError.value = null,
-                      ),
-                    ],
-                  ),
-                );
-              }),
-
-              const SizedBox(height: MarketplaceSpacing.lg),
-
-              // ── Send OTP Button ─────────────────────────
-              Obx(() => ElevatedButton(
-                onPressed: controller.isLoading ? null : controller.sendOtp,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, MarketplaceSpacing.buttonHeight),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(MarketplaceRadius.button),
-                  ),
-                ),
-                child: controller.isLoading
-                    ? const SizedBox(
-                        width: 20, height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: MarketplaceColors.onPrimary,
-                        ),
-                      )
-                    : Text(
-                        controller.needsRegistration.value
-                            ? LocaleKeys.signUp.tr
-                            : LocaleKeys.sendOtp.tr,
-                        style: MarketplaceTypography.buttonLabel,
-                      ),
-              )),
-
-              const SizedBox(height: MarketplaceSpacing.sm),
-
-              // Continue as Guest — secondary option below Send OTP
-              OutlinedButton(
-                onPressed: controller.continueAsGuest,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, MarketplaceSpacing.buttonHeight),
-                  side: const BorderSide(color: MarketplaceColors.stroke),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(MarketplaceRadius.button),
-                  ),
-                ),
-                child: Text(
-                  LocaleKeys.continueAsGuest.tr,
-                  style: MarketplaceTypography.body.copyWith(
-                    color: MarketplaceColors.textBody,
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+      )),
+    );
+  }
+}
 
-              const SizedBox(height: MarketplaceSpacing.lg),
+class _BackButton extends StatelessWidget {
+  const _BackButton();
 
-              // ── Divider with "Or continue with" ─────────
-              Row(
+  @override
+  Widget build(BuildContext context) {
+
+    if (!Navigator.of(context).canPop()) return const SizedBox(height: 44);
+
+    return SizedBox(
+      height: 44,
+      child: Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: const BackButtonSlot(),
+      ),
+    );
+  }
+}
+
+/// `🇱🇾 +218 │ 91 234 5678` — one left-to-right run in both languages. The
+/// country code stays ahead of the subscriber number in Arabic too; a phone
+/// number is not a sentence and mirroring it is a bug.
+class PhoneField extends GetView<AuthController> {
+  const PhoneField({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Obx(() {
+      final error = controller.phoneError.value;
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Container(
+              height: 54,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: palette.surface,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: error != null
+                      ? StatusTone.danger.foreground(palette.isDark)
+                      : palette.hairline,
+                  width: error != null ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
                 children: [
-                  const Expanded(child: Divider(color: MarketplaceColors.stroke)),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: MarketplaceSpacing.md),
-                    child: Text(
-                      LocaleKeys.orContinueWith.tr,
-                      style: MarketplaceTypography.descriptionBody,
+                  Text(
+                    '🇱🇾',
+                    style: MarketplaceTypography.rowTitle
+                        .copyWith(fontSize: 16),
+                  ),
+                  const SizedBox(width: 7),
+                  Text(
+                    PhoneUtils.countryCode,
+                    style: MarketplaceTypography.rowTitle.copyWith(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: palette.textPrimary,
                     ),
                   ),
-                  const Expanded(child: Divider(color: MarketplaceColors.stroke)),
+                  const SizedBox(width: 10),
+                  Container(width: 1, height: 22, color: palette.hairline),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: controller.phoneController,
+                      focusNode: controller.phoneFocusNode,
+                      keyboardType: TextInputType.phone,
+                      textDirection: TextDirection.ltr,
+                      textAlign: TextAlign.left,
+                      autofillHints: const [AutofillHints.telephoneNumber],
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(10),
+                      ],
+                      onSubmitted: (_) => controller.sendOtp(),
+                      cursorColor: palette.brand,
+                      style: MarketplaceTypography.rowTitle.copyWith(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.6,
+                        color: palette.textPrimary,
+                      ),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        filled: false,
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        errorBorder: InputBorder.none,
+                        focusedErrorBorder: InputBorder.none,
+                        disabledBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        hintText: '91 234 5678',
+                        hintStyle: MarketplaceTypography.rowTitle.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.6,
+                          color: palette.textMuted,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-
-              const SizedBox(height: MarketplaceSpacing.lg),
-
-              // ── Google Button ───────────────────────────
-              _SocialLoginButton(
-                label: LocaleKeys.continueWithGoogle.tr,
-                iconPath: 'assets/icons/google.svg', // Add SVG asset
-                onTap: controller.continueWithGoogle,
-              ),
-
-              const SizedBox(height: MarketplaceSpacing.md),
-
-              // ── Apple Button ────────────────────────────
-              _SocialLoginButton(
-                label: LocaleKeys.continueWithApple.tr,
-                iconPath: 'assets/icons/apple.svg', // Add SVG asset
-                onTap: controller.continueWithApple,
-              ),
-
-              const SizedBox(height: MarketplaceSpacing.xl),
-
-              // ── Terms Agreement ─────────────────────────
-              Center(
-                child: Wrap(
-                  alignment: WrapAlignment.center,
-                  children: [
-                    Text(
-                      LocaleKeys.termsAgreement.tr,
-                      style: MarketplaceTypography.descriptionBody.copyWith(
-                        color: MarketplaceColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    GestureDetector(
-                      onTap: () {/* TODO: Open Terms URL */},
-                      child: Text(
-                        LocaleKeys.termsOfService.tr,
-                        style: MarketplaceTypography.descriptionBody.copyWith(
-                          color: MarketplaceColors.link,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      ' ${LocaleKeys.and.tr} ',
-                      style: MarketplaceTypography.descriptionBody.copyWith(
-                        color: MarketplaceColors.textSecondary,
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {/* TODO: Open Privacy URL */},
-                      child: Text(
-                        LocaleKeys.privacyPolicy.tr,
-                        style: MarketplaceTypography.descriptionBody.copyWith(
-                          color: MarketplaceColors.link,
-                          decoration: TextDecoration.underline,
-                        ),
-                      ),
-                    ),
-                  ],
+            ),
+          ),
+          if (error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                error,
+                style: MarketplaceTypography.rowMeta.copyWith(
+                  fontSize: 11,
+                  color: StatusTone.danger.foreground(palette.isDark),
                 ),
               ),
+            ),
+        ],
+      );
+    });
+  }
+}
 
-              const SizedBox(height: MarketplaceSpacing.xl),
-            ],
+/// Which language the SMS arrives in. It switches the app locale, which is what
+/// `Accept-Language` is taken from on the next request.
+class _SmsLanguageToggle extends StatelessWidget {
+  const _SmsLanguageToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final locale = Get.find<LocaleController>();
+
+    return Row(
+      children: [
+        Icon(Icons.language_rounded, size: 15, color: palette.textMuted),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            LocaleKeys.smsLanguage.tr,
+            style: MarketplaceTypography.rowMeta.copyWith(
+              fontSize: 11,
+              color: palette.textSecondary,
+            ),
+          ),
+        ),
+        Obx(
+          () => Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: palette.surfaceSunken,
+              borderRadius: BorderRadius.circular(MarketplaceRadius.full),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _LanguagePill(
+                  label: 'العربية',
+                  isSelected: locale.isArabic,
+                  onTap: locale.switchToArabic,
+                ),
+                _LanguagePill(
+                  label: 'English',
+                  isSelected: locale.isEnglish,
+                  onTap: locale.switchToEnglish,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _LanguagePill extends StatelessWidget {
+  const _LanguagePill({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? palette.brand : const Color(0x00000000),
+          borderRadius: BorderRadius.circular(MarketplaceRadius.full),
+        ),
+        child: Text(
+          label,
+          style: MarketplaceTypography.pillLabel.copyWith(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: isSelected ? palette.onBrand : palette.textSecondary,
           ),
         ),
       ),
@@ -307,44 +337,99 @@ class MarketplaceLoginPage extends GetView<AuthController> {
   }
 }
 
-/// Reusable social login button (outlined style)
-class _SocialLoginButton extends StatelessWidget {
-  const _SocialLoginButton({
-    required this.label,
-    required this.iconPath,
-    required this.onTap,
-  });
-
-  final String label;
-  final String iconPath;
-  final VoidCallback onTap;
-
+/// Warns about the registration branch before the customer walks into it.
+class _FirstTimeNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: onTap,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size(double.infinity, MarketplaceSpacing.buttonHeight),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(MarketplaceRadius.button),
-        ),
-        side: const BorderSide(color: MarketplaceColors.stroke),
+    final palette = context.palette;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+      decoration: BoxDecoration(
+        color: palette.surfaceSunken,
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Use Image.asset for PNG or flutter_svg for SVG
-          // For now, use a placeholder icon
-          const Icon(Icons.login, size: 20, color: MarketplaceColors.textBody),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: MarketplaceTypography.body.copyWith(
-              color: MarketplaceColors.textBody,
+          Icon(
+            Icons.info_outline_rounded,
+            size: 14,
+            color: palette.textMuted,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              LocaleKeys.firstTimeNote.tr,
+              style: MarketplaceTypography.rowMeta.copyWith(
+                fontSize: 10.5,
+                height: 1.65,
+                color: palette.textSecondary,
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _NextSteps extends StatelessWidget {
+  const _NextSteps();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        _Step(index: 1, labelKey: LocaleKeys.stepEnterPhone),
+        SizedBox(height: 10),
+        _Step(index: 2, labelKey: LocaleKeys.stepEnterCode),
+      ],
+    );
+  }
+}
+
+class _Step extends StatelessWidget {
+  const _Step({required this.index, required this.labelKey});
+
+  final int index;
+  final String labelKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Row(
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: palette.surfaceSunken,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            '$index',
+            textDirection: TextDirection.ltr,
+            style: MarketplaceTypography.labelCaps.copyWith(
+              fontSize: 10,
+              color: palette.textSecondary,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            labelKey.tr,
+            style: MarketplaceTypography.rowMeta.copyWith(
+              fontSize: 11.5,
+              color: palette.textSecondary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

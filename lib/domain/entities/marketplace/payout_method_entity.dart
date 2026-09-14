@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:marketplace/core/utils/localized_copy.dart';
 
 /// Input control types a payout method can declare.
 enum PayoutFieldType {
@@ -18,53 +19,80 @@ enum PayoutFieldType {
 }
 
 class PayoutFieldOptionEntity extends Equatable {
-  const PayoutFieldOptionEntity({required this.value, required this.label});
+  const PayoutFieldOptionEntity({
+    required this.value,
+    required this.labelAr,
+    required this.labelEn,
+  });
 
   final String value;
-  final String label;
+  final String labelAr;
+  final String labelEn;
+
+  String get label => localizedCopy(labelAr, labelEn) ?? value;
 
   @override
-  List<Object?> get props => [value, label];
+  List<Object?> get props => [value, labelAr, labelEn];
 }
 
 /// One field the customer must fill in for a payout method. The backend owns
-/// the label, the control type, and the validation rule.
+/// the label, the control type, and the validation rule — in both languages,
+/// so the form follows the app language without a refetch.
 class PayoutMethodFieldEntity extends Equatable {
   const PayoutMethodFieldEntity({
     required this.id,
     required this.fieldKey,
-    required this.label,
+    required this.labelAr,
+    required this.labelEn,
     required this.fieldType,
     required this.isRequired,
     required this.sortOrder,
-    this.placeholder,
+    this.placeholderAr,
+    this.placeholderEn,
     this.validationRegex,
-    this.validationMessage,
+    this.validationMessageAr,
+    this.validationMessageEn,
     this.options = const [],
   });
 
   final String id;
   final String fieldKey;
-  final String label;
+  final String labelAr;
+  final String labelEn;
   final PayoutFieldType fieldType;
   final bool isRequired;
   final int sortOrder;
-  final String? placeholder;
+  final String? placeholderAr;
+  final String? placeholderEn;
   final String? validationRegex;
-  final String? validationMessage;
+  final String? validationMessageAr;
+  final String? validationMessageEn;
   final List<PayoutFieldOptionEntity> options;
+
+  String get label => localizedCopy(labelAr, labelEn) ?? fieldKey;
+
+  String? get placeholder => localizedCopy(placeholderAr, placeholderEn);
+
+  /// The backend's "why this value is wrong" copy for the active locale.
+  /// Null when the backend shipped neither language — the caller then falls
+  /// back to the app's own generic message.
+  String? get validationMessage =>
+      localizedCopy(validationMessageAr, validationMessageEn);
 
   @override
   List<Object?> get props => [
         id,
         fieldKey,
-        label,
+        labelAr,
+        labelEn,
         fieldType,
         isRequired,
         sortOrder,
-        placeholder,
+        placeholderAr,
+        placeholderEn,
         validationRegex,
-        validationMessage,
+        validationMessageAr,
+        validationMessageEn,
         options,
       ];
 }
@@ -73,18 +101,22 @@ class PayoutMethodFieldEntity extends Equatable {
 class PayoutMethodEntity extends Equatable {
   const PayoutMethodEntity({
     required this.id,
-    required this.name,
+    required this.nameAr,
+    required this.nameEn,
     required this.fields,
     required this.sortOrder,
     this.iconUrl,
   });
 
   final String id;
-  final String name;
+  final String nameAr;
+  final String nameEn;
   final List<PayoutMethodFieldEntity> fields;
   final int sortOrder;
   final String? iconUrl;
 
+  String get name => localizedCopy(nameAr, nameEn) ?? '';
+
   @override
-  List<Object?> get props => [id, name, fields, sortOrder, iconUrl];
+  List<Object?> get props => [id, nameAr, nameEn, fields, sortOrder, iconUrl];
 }

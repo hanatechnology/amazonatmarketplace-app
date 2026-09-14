@@ -2,6 +2,7 @@ import 'package:marketplace/core/states/app_state.dart';
 import 'package:marketplace/data/repositories/marketplace_order_repository.dart';
 import 'package:marketplace/domain/entities/marketplace/order_entity.dart';
 import 'package:marketplace/domain/usecases/base_use_case.dart';
+import '../../../../core/errors/error_messages.dart';
 
 /// Loads one page of the customer's order history.
 class GetOrdersUseCase
@@ -26,7 +27,7 @@ class GetOrdersUseCase
           totalItems: page.totalItems,
         ),
       ),
-      onFailure: (exception) => AppStateError(exception.message),
+      onFailure: (exception) => AppStateError(exception.localizedMessage),
     );
   }
 }

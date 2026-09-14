@@ -1,3 +1,4 @@
+import 'package:marketplace/core/bases/base_list_response.dart';
 import 'package:marketplace/core/bases/base_paginated_response.dart';
 import 'package:marketplace/core/bases/base_repository.dart';
 import 'package:marketplace/core/bases/base_response.dart';
@@ -99,6 +100,19 @@ class ProductRepository extends BaseRepository<ApiService> {
     return get(
       '/categories',
       (json) => BasePaginatedResponse.fromJson(
+          json, (jsonData) => CategoryModel.fromJson(jsonData)).data,
+    );
+  }
+
+  /// `GET /categories/tree` — the same categories, nested.
+  ///
+  /// This is the only source of subcategories: the flat list carries no
+  /// `children`, so tiles counting subcategories and the subcategory rail both
+  /// have to read the tree. It takes no parameters and is not paginated.
+  Future<Result<List<CategoryModel>>> getCategoryTree() {
+    return get(
+      '/categories/tree',
+      (json) => BaseListResponse.fromJson(
           json, (jsonData) => CategoryModel.fromJson(jsonData)).data,
     );
   }

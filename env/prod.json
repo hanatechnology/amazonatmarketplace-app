@@ -1,0 +1,4 @@
+{
+  "ENV": "prod",
+  "API_BASE_URL": "https://REPLACE-ME.example.com/client/api/v1"
+}

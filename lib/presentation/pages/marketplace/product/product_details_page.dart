@@ -1,302 +1,552 @@
 import 'package:flutter/material.dart';
+import '../../../../app/routes/app_routes.dart';
+import 'product_gallery_page.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../../../core/theme/marketplace_colors.dart';
-import '../../../../core/theme/marketplace_typography.dart';
-import '../../../../core/theme/marketplace_spacing.dart';
-import '../../../../core/localization/locale_keys.dart';
-import '../../../../core/components/marketplace/marketplace_app_bar.dart';
-import '../../../../core/components/marketplace/product_details/product_image_gallery.dart';
-import '../../../../core/components/marketplace/product_details/product_price_row.dart';
-import '../../../../core/components/marketplace/product_details/product_rating_row.dart';
-import '../../../../core/components/marketplace/product_details/product_seller_section.dart';
-import '../../../../core/components/marketplace/product_details/product_quantity_section.dart';
-import '../../../../core/components/marketplace/product_details/product_description_section.dart';
-import '../../../../core/components/marketplace/product_details/product_reviews_section.dart';
+
 import '../../../../core/components/marketplace/product_details/product_add_to_cart_bar.dart';
-import '../../../../core/components/marketplace/product_details/dtos/product_image_gallery_dto.dart';
-import '../../../../core/components/marketplace/product_details/dtos/product_price_dto.dart';
-import '../../../../core/components/marketplace/product_details/dtos/product_rating_dto.dart';
-import '../../../../core/components/marketplace/product_details/dtos/product_seller_section_dto.dart';
-import '../../../../core/components/marketplace/product_details/dtos/product_quantity_dto.dart';
-import '../../../../core/components/marketplace/product_details/dtos/product_description_dto.dart';
-import '../../../../core/components/marketplace/product_details/dtos/product_reviews_section_dto.dart';
-import '../../../../core/components/marketplace/product_details/dtos/product_review_dto.dart';
-import '../../../../core/components/marketplace/product_details/dtos/product_add_to_cart_dto.dart';
+import '../../../../core/components/marketplace/product_details/product_details_shimmer.dart';
+import '../../../../core/components/marketplace/product_details/product_hero.dart';
+import '../../../../core/components/marketplace/product_details/product_not_found_view.dart';
+import '../../../../core/components/marketplace/product_details/product_seller_card.dart';
+import '../../../../core/components/marketplace/product_details/product_spec_tiles.dart';
+import '../../../../core/components/marketplace/product_details/product_store_rail.dart';
+import '../../../../core/localization/locale_keys.dart';
+import '../../../../core/theme/marketplace_palette.dart';
+import '../../../../core/theme/marketplace_radius.dart';
+import '../../../../core/theme/marketplace_spacing.dart';
+import '../../../../core/theme/marketplace_typography.dart';
+import '../../../../core/theme/status_tone.dart';
+import '../../../../core/utils/price_formatter.dart';
 import '../../../../domain/entities/marketplace/product_details_entity.dart';
+import '../../../../domain/entities/marketplace/product_entity.dart';
 import '../../../controllers/marketplace/product_details_controller.dart';
+import '../../../../core/components/marketplace/sticky_back_bar.dart';
 
-// ── Product Details Page ─────────────────────────────────────────────────────
-//
-// Architecture rules enforced here:
-//   • [ProductDetailsPage] is the ONLY widget that extends [GetView].
-//     It owns the controller reference and maps reactive state → DTOs.
-//   • All child components (ProductImageGallery, ProductPriceRow, etc.)
-//     are pure [StatelessWidget]s that receive pre-built DTOs — no GetX
-//     dependency injection inside them.
-//   • [Obx] is used at the page level only, wrapping the data-loading state
-//     and each reactive slot that needs fine-grained rebuilds.
-
+/// One product, drawn from `GET /products/{id}` and nothing else.
+///
+/// Everything the contract does not carry is absent by design: no rating, no
+/// reviews, no discount, no competing sellers, no favourite. What replaces the
+/// "other sellers" idea is the store's own rail — a product has exactly one
+/// vendor, so the only sideways move available is the rest of that store.
 class ProductDetailsPage extends GetView<ProductDetailsController> {
   const ProductDetailsPage({super.key});
 
+  static const double gutter = 20;
+
+  /// How far the content sheet rides up over the hero.
+  static const double _sheetOverlap = 26;
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: MarketplaceColors.surface,
-      appBar: MarketplaceAppBar(
-        title: LocaleKeys.details.tr,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined, size: 22),
-            color: MarketplaceColors.primary,
-            onPressed: () {
-              // TODO: Implement share product URL
-            },
-          ),
-        ],
-      ),
-      body: Obx(() {
-        final state = controller.stateFor<ProductDetailsEntity>(ProductDetailsController.kProduct);
-        return state.value.when(
-          onInitial: () => const SizedBox.shrink(),
-          onLoading: () => const Center(
-            child: CircularProgressIndicator(
-              color: MarketplaceColors.primary,
-            ),
-          ),
-          onSuccess: (data, _) => _ProductDetailsBody(
-            product: data,
-            controller: controller,
-          ),
-          onError: (message, _) => _ErrorView(
-            message: message,
-            onRetry: controller.refresh,
-          ),
-        );
-      }),
-      bottomNavigationBar: Obx(
-        () => ProductAddToCartBar(
-          dto: ProductAddToCartDto(
-            isAddingToCart: controller.isAddingToCart.value,
-            unitPrice: _currentProduct()?.price ?? 0,
-            quantity: controller.quantity.value,
-            onAddToCart: controller.addToCart,
-          ),
-        ),
-      ),
-    );
-  }
+    final palette = context.palette;
 
-  /// Safely extracts the loaded product from the state, or null.
-  ProductDetailsEntity? _currentProduct() {
-    final state = controller.stateFor<ProductDetailsEntity>(ProductDetailsController.kProduct).value;
-    return state.when(
-      onInitial: () => null,
-      onLoading: () => null,
-      onSuccess: (data, _) => data as ProductDetailsEntity?,
-      onError: (_, __) => null,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      // The hero photograph runs under the status bar in both themes, so its
+      // glyphs stay light; the scrim keeps them readable.
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: palette.background,
+        body: StickyBackBar(
+          tone: StickyBackTone.glass,
+          child: Obx(() {
+          final state = controller
+              .stateFor<ProductDetailsEntity>(ProductDetailsController.kProduct)
+              .value;
+
+          return state.when(
+            onInitial: () => const ProductDetailsShimmer(gutter: gutter),
+            onLoading: () => const ProductDetailsShimmer(gutter: gutter),
+            onSuccess: (product, _) => _ProductBody(product: product),
+            onError: (message, _) => ProductNotFoundView(
+              isNotFound: controller.isNotFound.value,
+              message: message,
+              onBrowse: controller.browseProducts,
+              onRetry: controller.refresh,
+            ),
+          );
+        })),
+        bottomNavigationBar: Obx(() {
+          final product = controller.getOperationData<ProductDetailsEntity>(
+            ProductDetailsController.kProduct,
+          );
+          if (product == null) return const SizedBox.shrink();
+
+          return ProductAddToCartBar(
+            quantity: controller.quantity.value,
+            isAvailable: product.isActive,
+            isAdding: controller.isAddingToCart.value,
+            onIncrement: controller.increment,
+            onDecrement: controller.decrement,
+            onAddToCart: controller.addToCart,
+          );
+        }),
+      ),
     );
   }
 }
 
-// ── Body (rendered when product loads) ──────────────────────────────────────
-//
-// Pure [StatelessWidget] — receives [ProductDetailsEntity] and
-// [ProductDetailsController] so it can build DTOs and wire callbacks.
-// No GetX FindMe / GetView usage inside.
-
-class _ProductDetailsBody extends StatelessWidget {
-  const _ProductDetailsBody({
-    required this.product,
-    required this.controller,
-  });
+class _ProductBody extends GetView<ProductDetailsController> {
+  const _ProductBody({required this.product});
 
   final ProductDetailsEntity product;
-  final ProductDetailsController controller;
-
-  // ── Mock data ────────────────────────────────────────────
-  // TODO: Replace with real data from ReviewsUseCase / SellerUseCase once
-  // the relevant endpoints are available.
-  static const _mockReviews = <ProductReviewDto>[
-    ProductReviewDto(
-      avatarUrl: '',
-      name: 'Ahmed M.',
-      rating: 5.0,
-      text: 'Excellent product! Great quality and fast shipping.',
-      date: 'Mar 2025',
-    ),
-    ProductReviewDto(
-      avatarUrl: '',
-      name: 'Sara K.',
-      rating: 4.0,
-      text: 'Good value for money. Would recommend to others.',
-      date: 'Feb 2025',
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
-    final imageUrls =
-        product.imageUrls.isNotEmpty ? product.imageUrls : [product.imageUrl];
+    final palette = context.palette;
+    final images = product.imageUrls.isNotEmpty
+        ? product.imageUrls
+        : <String>[if (product.imageUrl.isNotEmpty) product.imageUrl];
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Image gallery ──────────────────────────────────
-          ProductImageGallery(
-            dto: ProductImageGalleryDto(
-              imageUrls: imageUrls,
-              onPageChanged: controller.onImageChanged,
-            ),
-          ),
-
-          // ── Main info ──────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: MarketplaceSpacing.screenPaddingH,
-              vertical: MarketplaceSpacing.md,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Product name — line height 1.3 so multi-line titles breathe
-                Text(
-                  product.name,
-                  style: MarketplaceTypography.productTitle.copyWith(
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: MarketplaceSpacing.sm),
-
-                // Price row with stock indicator
-                ProductPriceRow(
-                  dto: ProductPriceDto(
-                    price: product.price,
-                    originalPrice: product.originalPrice,
-                    discountPercent: product.discountPercent,
-                    isInStock: true, // TODO: wire from entity when available
-                  ),
-                ),
-                const SizedBox(height: MarketplaceSpacing.sm),
-
-                // Rating row — tappable, navigates to reviews
-                ProductRatingRow(
-                  dto: ProductRatingDto(
-                    rating: product.rating,
-                    // TODO: replace 0 with product.reviewCount when added
-                    reviewCount: 0,
-                    onTap: controller.goToReviews,
-                  ),
-                ),
-                const SizedBox(height: MarketplaceSpacing.lg),
-
-                // Seller section
-                ProductSellerSection(
-                  dto: ProductSellerSectionDto(
-                    imageUrl: product.vendor.logoUrl, // TODO: from SellerEntity
-                    name: product.vendor.name,
-                    location: null, // TODO: from SellerEntity
-                    rating: 4.5, // TODO: from SellerEntity
-                    isVerified: true, // TODO: from SellerEntity
-                    isOpen: true, // TODO: from SellerEntity
-                    followerCount: 0, // TODO: from SellerEntity
-                    onFollow: () {}, // TODO: FollowSellerUseCase
-                    onSeeAll: controller.goToProductSellers,
-                  ),
-                ),
-                const SizedBox(height: MarketplaceSpacing.lg),
-
-                // Quantity — rebuilt reactively when quantity changes
-                Obx(() => ProductQuantitySection(
-                      dto: ProductQuantityDto(
-                        value: controller.quantity.value,
-                        onChanged: (val) {
-                          if (val > controller.quantity.value) {
-                            controller.increment();
-                          } else {
-                            controller.decrement();
-                          }
-                        },
-                      ),
-                    )),
-                const SizedBox(height: MarketplaceSpacing.lg),
-
-                const Divider(color: MarketplaceColors.stroke),
-                const SizedBox(height: MarketplaceSpacing.md),
-
-                // Description — rebuilt reactively when expanded state changes
-                Obx(() => ProductDescriptionSection(
-                      dto: ProductDescriptionDto(
-                        description: product.description,
-                        isExpanded: controller.isDescriptionExpanded.value,
-                        onToggle: controller.toggleDescription,
-                      ),
-                    )),
-                const SizedBox(height: MarketplaceSpacing.lg),
-
-                const Divider(color: MarketplaceColors.stroke),
-                const SizedBox(height: MarketplaceSpacing.md),
-
-                // Reviews section
-                ProductReviewsSection(
-                  dto: ProductReviewsSectionDto(
-                    reviews: _mockReviews,
-                    averageRating: product.rating,
-                    totalReviews: 0, // TODO: from ReviewsUseCase
-                    onSeeAll: controller.goToReviews,
-                  ),
-                ),
-
-                const SizedBox(height: MarketplaceSpacing.xxl),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Error view ───────────────────────────────────────────────────────────────
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message, required this.onRetry});
-
-  final String? message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(MarketplaceSpacing.screenPaddingH),
+    return RefreshIndicator(
+      onRefresh: controller.refresh,
+      color: palette.brand,
+      backgroundColor: palette.surface,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 48,
-              color: MarketplaceColors.stroke,
+            Obx(
+              () => ProductHero(
+                imageUrls: images,
+                activeIndex: controller.activeImageIndex.value,
+                onPageChanged: controller.onImageChanged,
+                isAvailable: product.isActive,
+                featuredLabel: _featuredLabel(product),
+                onImageTap: (index) => Get.toNamed(
+                  Routes.MARKETPLACE_PRODUCT_GALLERY,
+                  arguments: ProductGalleryArgs(
+                    images: images,
+                    initialIndex: index,
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: MarketplaceSpacing.md),
-            Text(
-              message ?? LocaleKeys.error.tr,
-              style: MarketplaceTypography.descriptionBody,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: MarketplaceSpacing.md),
-            ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh, size: 18),
-              label: Text(LocaleKeys.retry.tr),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(140, MarketplaceSpacing.buttonHeight),
+            Transform.translate(
+              offset: const Offset(0, -ProductDetailsPage._sheetOverlap),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: palette.background,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(28),
+                  ),
+                ),
+                padding: const EdgeInsets.only(top: 16),
+                child: _Sheet(product: product),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// `featured_section` is one of three documented values; anything else the
+  /// backend adds later goes unlabelled rather than shown raw.
+  String? _featuredLabel(ProductDetailsEntity product) {
+    if (!product.isFeatured) return null;
+    switch (product.featuredSection) {
+      case 'NEW_ARRIVALS':
+        return LocaleKeys.newArrivals.tr;
+      case 'BEST_SELLERS':
+        return LocaleKeys.bestSellers.tr;
+      case 'ADMIN_PICKS':
+        return LocaleKeys.adminPicks.tr;
+      default:
+        return null;
+    }
+  }
+}
+
+class _Sheet extends GetView<ProductDetailsController> {
+  const _Sheet({required this.product});
+
+  final ProductDetailsEntity product;
+
+  @override
+  Widget build(BuildContext context) {
+    const gutter = ProductDetailsPage.gutter;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: gutter),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _TopRow(product: product),
+              const SizedBox(height: 9),
+              Text(
+                product.name,
+                style: MarketplaceTypography.heroDisplay.copyWith(
+                  fontSize: MarketplaceTypography.isArabic ? 22 : 25,
+                  color: product.isActive
+                      ? context.palette.textPrimary
+                      : context.palette.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _PriceRow(price: product.price, isAvailable: product.isActive),
+              const SizedBox(height: 11),
+              if (product.vendor.id.isNotEmpty)
+                ProductSellerCard(
+                  name: product.vendor.name,
+                  logoUrl: product.vendor.logoUrl,
+                  onTap: controller.openStore,
+                ),
+              const SizedBox(height: 11),
+              if (product.isActive)
+                _Description(text: product.description)
+              else
+                const _UnavailableNote(),
+              const SizedBox(height: 12),
+              ProductSpecTiles(
+                weight: product.weight,
+                sku: product.sku,
+                createdAt: product.createdAt,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 18),
+        _StoreRailSection(product: product),
+        const SizedBox(height: MarketplaceSpacing.lg),
+      ],
+    );
+  }
+}
+
+/// Category chip and stock pill share a line: one says where the product sits
+/// in the catalogue, the other whether it can be bought at all.
+class _TopRow extends GetView<ProductDetailsController> {
+  const _TopRow({required this.product});
+
+  final ProductDetailsEntity product;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Row(
+      children: [
+        if (product.category.name.isNotEmpty)
+          Flexible(
+            child: GestureDetector(
+              onTap: controller.openCategory,
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: palette.surfaceSunken,
+                  borderRadius:
+                      BorderRadius.circular(MarketplaceRadius.full),
+                  border: Border.all(color: palette.hairline),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.local_offer_outlined,
+                      size: 11,
+                      color: palette.textMuted,
+                    ),
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        product.category.name,
+                        style: MarketplaceTypography.pillLabel.copyWith(
+                          fontSize: 10,
+                          color: palette.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        const Spacer(),
+        const SizedBox(width: 8),
+        _StockPill(isAvailable: product.isActive),
+      ],
+    );
+  }
+}
+
+class _StockPill extends StatelessWidget {
+  const _StockPill({required this.isAvailable});
+
+  final bool isAvailable;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final isDark = palette.isDark;
+    final tone = isAvailable ? StatusTone.success : StatusTone.warning;
+
+    return Container(
+      height: 22,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: tone.background(isDark),
+        borderRadius: BorderRadius.circular(MarketplaceRadius.full),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isAvailable) ...[
+            Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(
+                color: tone.foreground(isDark),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 5),
+          ],
+          Text(
+            (isAvailable ? LocaleKeys.inStock.tr : LocaleKeys.outOfStock.tr)
+                .toUpperCase(),
+            style: MarketplaceTypography.labelCaps.copyWith(
+              color: tone.foreground(isDark),
+              letterSpacing: MarketplaceTypography.isArabic ? 0 : 0.9,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Figure in the display serif, currency trailing it — Latin digits and
+/// left-to-right in Arabic too.
+class _PriceRow extends StatelessWidget {
+  const _PriceRow({required this.price, required this.isAvailable});
+
+  final double price;
+  final bool isAvailable;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Row(
+      textDirection: TextDirection.ltr,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          PriceFormatter.amount(price),
+          style: MarketplaceTypography.priceDisplay.copyWith(
+            fontSize: 29,
+            color: isAvailable ? palette.textPrimary : palette.textSecondary,
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          PriceFormatter.unit(),
+          style: MarketplaceTypography.priceUnit.copyWith(
+            fontSize: 11,
+            color: palette.textMuted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Description extends GetView<ProductDetailsController> {
+  const _Description({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    if (text.trim().isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          LocaleKeys.description.tr.toUpperCase(),
+          style: MarketplaceTypography.labelCaps.copyWith(
+            fontSize: 10,
+            color: palette.textMuted,
+            letterSpacing: MarketplaceTypography.isArabic ? 0 : 0.9,
+          ),
+        ),
+        const SizedBox(height: 5),
+        Obx(() {
+          final isExpanded = controller.isDescriptionExpanded.value;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                text,
+                maxLines: isExpanded ? null : 2,
+                overflow: isExpanded
+                    ? TextOverflow.visible
+                    : TextOverflow.ellipsis,
+                style: MarketplaceTypography.rowMeta.copyWith(
+                  fontSize: 11.5,
+                  height: 1.72,
+                  color: palette.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              GestureDetector(
+                onTap: controller.toggleDescription,
+                behavior: HitTestBehavior.opaque,
+                child: Text(
+                  isExpanded
+                      ? LocaleKeys.readLess.tr
+                      : LocaleKeys.readMore.tr,
+                  style: MarketplaceTypography.pillLabel.copyWith(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: palette.brand,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }),
+      ],
+    );
+  }
+}
+
+/// Replaces the description when the product cannot be ordered. It offers the
+/// two recoveries that exist — the store's other products, and coming back.
+class _UnavailableNote extends StatelessWidget {
+  const _UnavailableNote();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final isDark = palette.isDark;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        color: StatusTone.warning.background(isDark),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            size: 15,
+            color: StatusTone.warning.foreground(isDark),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              LocaleKeys.outOfStockNote.tr,
+              style: MarketplaceTypography.rowMeta.copyWith(
+                fontSize: 11,
+                height: 1.65,
+                color: StatusTone.warning.foreground(isDark),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "More from this store" — and, when the product itself cannot be bought,
+/// "Available now from this store", which is the whole point of the rail then.
+class _StoreRailSection extends GetView<ProductDetailsController> {
+  const _StoreRailSection({required this.product});
+
+  final ProductDetailsEntity product;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Obx(() {
+      final state = controller
+          .stateFor<List<ProductEntity>>(
+            ProductDetailsController.kStoreProducts,
+          )
+          .value;
+
+      return state.when(
+        onInitial: () => const SizedBox.shrink(),
+        onLoading: () => const SizedBox.shrink(),
+        onError: (_, __) => const SizedBox.shrink(),
+        onSuccess: (products, _) {
+          if (products.isEmpty) return const SizedBox.shrink();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  ProductDetailsPage.gutter,
+                  0,
+                  ProductDetailsPage.gutter,
+                  8,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        (product.isActive
+                                ? LocaleKeys.moreFromStore.tr
+                                : LocaleKeys.availableNowStore.tr)
+                            .toUpperCase(),
+                        style: MarketplaceTypography.labelCaps.copyWith(
+                          fontSize: 10,
+                          color: palette.textMuted,
+                          letterSpacing:
+                              MarketplaceTypography.isArabic ? 0 : 0.9,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: controller.openStore,
+                      behavior: HitTestBehavior.opaque,
+                      child: Text(
+                        LocaleKeys.seeAll.tr,
+                        style: MarketplaceTypography.pillLabel.copyWith(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: palette.brand,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              ProductStoreRail(
+                products: products,
+                onTapProduct: controller.openProduct,
+                gutter: ProductDetailsPage.gutter,
+              ),
+            ],
+          );
+        },
+      );
+    });
   }
 }

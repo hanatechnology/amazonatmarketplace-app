@@ -25,9 +25,6 @@ class SellerInfoCard extends StatelessWidget {
     required this.rating,
     required this.isVerified,
     required this.isOpen,
-    required this.followerCount,
-    required this.onFollow,
-    this.isFollowing = false,
   });
 
   final String imageUrl;
@@ -36,21 +33,6 @@ class SellerInfoCard extends StatelessWidget {
   final double rating;
   final bool isVerified;
   final bool isOpen;
-  final int followerCount;
-  final VoidCallback onFollow;
-
-  /// When true the button shows "Following" in the filled primary style.
-  final bool isFollowing;
-
-  /// Formats a follower count: 1200 → "1.2K", 1000000 → "1M".
-  String _formatCount(int count) {
-    if (count >= 1000000) {
-      return '${(count / 1000000).toStringAsFixed(1)}M';
-    } else if (count >= 1000) {
-      return '${(count / 1000).toStringAsFixed(count % 1000 == 0 ? 0 : 1)}K';
-    }
-    return count.toString();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,27 +130,6 @@ class SellerInfoCard extends StatelessWidget {
                       ),
                       const SizedBox(height: MarketplaceSpacing.sm),
 
-                      // ── Followers + Follow button ─────────────
-                      // Row inside Expanded → bounded width → Spacer works.
-                      // Row(
-                      //   children: [
-                      //     Icon(
-                      //       Icons.people_outline,
-                      //       size: 14,
-                      //       color: MarketplaceColors.textSecondary,
-                      //     ),
-                      //     const SizedBox(width: 4),
-                      //     Text(
-                      //       '${_formatCount(followerCount)} ${LocaleKeys.followers.tr}',
-                      //       style: MarketplaceTypography.cardSubtitle,
-                      //     ),
-                      //     const Spacer(),
-                      //     _FollowButton(
-                      //       isFollowing: isFollowing,
-                      //       onTap: onFollow,
-                      //     ),
-                      //   ],
-                      // ),
                     ],
                   ),
                 ),
@@ -201,7 +162,7 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isOpen ? MarketplaceColors.primary : const Color(0xFFD32F2F);
     final bg = isOpen
-        ? MarketplaceColors.primary.withOpacity(0.1)
+        ? MarketplaceColors.primary.withValues(alpha: 0.1)
         : const Color(0xFFFFEEEE);
 
     return Container(
@@ -230,82 +191,6 @@ class _StatusChip extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ── Follow / Following toggle button ─────────────────────────────────────
-
-class _FollowButton extends StatelessWidget {
-  const _FollowButton({
-    required this.isFollowing,
-    required this.onTap,
-  });
-
-  final bool isFollowing;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    if (isFollowing) {
-      // Filled style when already following
-      return SizedBox(
-        height: 28,
-        child: ElevatedButton.icon(
-          onPressed: onTap,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: MarketplaceColors.primary,
-            foregroundColor: MarketplaceColors.onPrimary,
-            padding: const EdgeInsets.symmetric(
-              horizontal: MarketplaceSpacing.sm,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(MarketplaceRadius.smallButton),
-            ),
-            elevation: 0,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          icon: const Icon(Icons.check, size: 13),
-          label: Text(
-            LocaleKeys.following.tr,
-            style: MarketplaceTypography.smallButton.copyWith(
-              color: MarketplaceColors.onPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Outlined style when not yet following
-    return SizedBox(
-      height: 28,
-      child: OutlinedButton.icon(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: MarketplaceColors.primary),
-          padding: const EdgeInsets.symmetric(
-            horizontal: MarketplaceSpacing.sm,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(MarketplaceRadius.smallButton),
-          ),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-        icon: Icon(
-          MarketplaceIcons.follow,
-          size: 13,
-          color: MarketplaceColors.primary,
-        ),
-        label: Text(
-          LocaleKeys.follow.tr,
-          style: MarketplaceTypography.smallButton.copyWith(
-            color: MarketplaceColors.primary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ),
     );
   }

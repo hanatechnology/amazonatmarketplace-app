@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:marketplace/app/routes/app_routes.dart';
@@ -8,24 +10,32 @@ import 'package:marketplace/domain/entities/marketplace/checkout_args.dart';
 import 'package:marketplace/domain/entities/marketplace/edfali_payment_entity.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/confirm_edfali_payment_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/get_edfali_payment_status_use_case.dart';
+import 'package:marketplace/domain/usecases/marketplace/order/cancel_order_use_case.dart';
 
 /// Arguments for the Edfali confirm screen.
 class EdfaliConfirmArgs {
   const EdfaliConfirmArgs({
     required this.orderId,
     required this.total,
+    this.orderNumber,
     this.otpSentTo,
     this.expiresInSeconds,
   });
 
   final String orderId;
   final double total;
+
+  /// Customer-facing number, shown on the held-order line. Null when the
+  /// checkout response did not carry one.
+  final String? orderNumber;
+
   final String? otpSentTo;
   final int? expiresInSeconds;
 }
 
 const String kConfirmEdfali = 'confirmEdfali';
 const String kEdfaliStatus = 'edfaliStatus';
+const String kCancelHeldOrder = 'cancelHeldOrder';
 
 /// Step two of the Edfali flow: collect the four-digit SMS PIN and confirm.
 ///
@@ -44,18 +54,70 @@ class EdfaliConfirmController
   final attemptsRemaining = RxnInt();
   final otpSentTo = RxnString();
 
+  /// Seconds left on the gateway's code. Counts down only when the checkout
+  /// response told us how long the code lives — the app never invents a
+  /// deadline of its own.
+  final remainingSeconds = RxnInt();
+  Timer? _ticker;
+
   @override
   void onInit() {
     super.onInit();
     args = Get.arguments as EdfaliConfirmArgs;
     otpSentTo.value = args.otpSentTo;
+    _startCountdown();
     // The gateway session may have moved on while the app was away, so the
     // screen re-reads it rather than trusting the checkout response alone.
     loadStatus();
   }
 
+  void _startCountdown() {
+    final seconds = args.expiresInSeconds;
+    if (seconds == null || seconds <= 0) return;
+
+    remainingSeconds.value = seconds;
+    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final left = (remainingSeconds.value ?? 0) - 1;
+      remainingSeconds.value = left;
+      if (left <= 0) {
+        timer.cancel();
+        // The gateway drops the session at zero; saying so beats letting the
+        // customer type a code that can no longer work.
+        otpError.value = LocaleKeys.edfaliSessionExpired.tr;
+      }
+    });
+  }
+
+  /// `mm:ss` for the countdown line, or null when there is no deadline.
+  String? get countdown {
+    final left = remainingSeconds.value;
+    if (left == null) return null;
+    final safe = left < 0 ? 0 : left;
+    final minutes = (safe ~/ 60).toString().padLeft(2, '0');
+    final seconds = (safe % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  bool get isExpired =>
+      remainingSeconds.value != null && remainingSeconds.value! <= 0;
+
+  bool get isCancelling => getState<dynamic>(kCancelHeldOrder).isLoading;
+
+  /// The order is still PENDING until the code is confirmed, which is exactly
+  /// the state `PATCH /orders/{id}/cancel` accepts.
+  Future<void> cancelHeldOrder() async {
+    if (isCancelling) return;
+    await handleState(
+      kCancelHeldOrder,
+      () => Get.find<CancelOrderUseCase>()
+          .call(CancelOrderInput(orderId: args.orderId)),
+      onSuccess: (_, __) => _goToCancelled(),
+    );
+  }
+
   @override
   void onClose() {
+    _ticker?.cancel();
     for (final controller in otpControllers) {
       controller.dispose();
     }
@@ -193,6 +255,11 @@ class EdfaliConfirmController
     );
   }
 
-  void _goToCancelled() =>
-      Get.offAllNamed(Routes.MARKETPLACE_ORDER_CANCELLED);
+  void _goToCancelled() => Get.offAllNamed(
+        Routes.MARKETPLACE_ORDER_CANCELLED,
+        arguments: OrderCancelledArgs(
+          orderNumber: args.orderNumber,
+          total: args.total,
+        ),
+      );
 }

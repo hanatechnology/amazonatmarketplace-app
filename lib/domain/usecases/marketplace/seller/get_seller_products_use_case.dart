@@ -2,6 +2,7 @@ import 'package:marketplace/core/states/app_state.dart';
 import 'package:marketplace/data/repositories/seller_repository.dart';
 import 'package:marketplace/domain/entities/marketplace/product_entity.dart';
 import 'package:marketplace/domain/usecases/base_use_case.dart';
+import '../../../../core/errors/error_messages.dart';
 
 /// Input for [GetSellerProductsUseCase].
 ///
@@ -45,7 +46,7 @@ class GetSellerProductsUseCase extends BaseUseCase<SellerProductsInput,
           totalItems: page.totalItems,
         ),
       ),
-      onFailure: (exception) => AppStateError(exception.message),
+      onFailure: (exception) => AppStateError(exception.localizedMessage),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:marketplace/data/repositories/product_repository.dart';
 import 'package:marketplace/domain/entities/marketplace/product_entity.dart';
 import 'package:marketplace/domain/usecases/base_use_case.dart';
 import 'package:marketplace/domain/entities/marketplace/product_query.dart';
+import '../../../../core/errors/error_messages.dart';
 
 /// Loads one page of products. `input.filters` carries the search text.
 ///
@@ -24,6 +25,7 @@ class GetProductsPageUseCase
       sortBy: query?.filter.sort.sortBy,
       sortDirection: query?.filter.sort.sortDirection,
       categoryId: query?.filter.categoryId,
+      featuredSection: query?.filter.featuredSection,
       extraParams: query?.priceParams,
     );
 
@@ -36,7 +38,7 @@ class GetProductsPageUseCase
           totalItems: page.totalItems,
         ),
       ),
-      onFailure: (exception) => AppStateError(exception.message),
+      onFailure: (exception) => AppStateError(exception.localizedMessage),
     );
   }
 }

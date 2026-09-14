@@ -1,214 +1,253 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:marketplace/core/localization/locale_keys.dart';
-import 'package:marketplace/core/theme/marketplace_colors.dart';
-import 'package:marketplace/core/theme/marketplace_radius.dart';
-import 'package:marketplace/core/theme/marketplace_spacing.dart';
-import 'package:marketplace/core/theme/marketplace_typography.dart';
 
-class AddressCardDto {
-  const AddressCardDto({
-    required this.id,
-    required this.label,
-    required this.fullName,
-    required this.phone,
-    required this.addressLine1,
-    this.addressLine2,
+import '../../../../domain/entities/marketplace/address_entity.dart';
+import '../../../localization/locale_keys.dart';
+import '../../../theme/marketplace_palette.dart';
+import '../../../theme/marketplace_radius.dart';
+import '../../../theme/marketplace_typography.dart';
+import '../../../theme/status_tone.dart';
+
+/// One saved address.
+///
+/// A saved address is not editable — the card offers "set as default" and
+/// "delete" only. Correcting one means adding the right address and deleting
+/// the wrong one, so a courier never reads a half-amended address.
+///
+/// "Set as default" lives here rather than inside the form: it is a
+/// `PATCH /addresses/{id}` carrying one key, so making the customer open and
+/// re-save the whole form for it — the web's only path — is unnecessary.
+class AddressCard extends StatelessWidget {
+  const AddressCard({
+    super.key,
+    required this.address,
     required this.cityName,
-    required this.state,
-    required this.isDefault,
-    this.isPickMode = false,
-    required this.onEdit,
     required this.onDelete,
     required this.onSetDefault,
-    required this.onPick,
+    this.onTap,
+    this.isBusy = false,
   });
 
-  final String id;
-  final String label;
-  final String fullName;
-  final String phone;
-  final String addressLine1;
-  final String? addressLine2;
+  final AddressEntity address;
   final String cityName;
-  final String state;
-  final bool isDefault;
-  final bool isPickMode;
-  final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onSetDefault;
-  final VoidCallback onPick;
+
+  /// Set in pick mode, when the whole card selects an address.
+  final VoidCallback? onTap;
+
+  final bool isBusy;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final isDark = palette.isDark;
+    final locality = [
+      address.addressLine2 ?? '',
+      cityName,
+      address.state,
+    ].where((part) => part.trim().isNotEmpty).join('، ');
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Opacity(
+        opacity: isBusy ? 0.5 : 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: palette.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: address.isDefault ? palette.brand : palette.hairline,
+              width: address.isDefault ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 13, 14, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        if (address.label.trim().isNotEmpty)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: palette.surfaceSunken,
+                              borderRadius: BorderRadius.circular(
+                                MarketplaceRadius.full,
+                              ),
+                            ),
+                            child: Text(
+                              address.label,
+                              style: MarketplaceTypography.labelCaps.copyWith(
+                                fontSize: 9,
+                                color: palette.textSecondary,
+                                letterSpacing:
+                                    MarketplaceTypography.isArabic ? 0 : 0.4,
+                              ),
+                            ),
+                          ),
+                        const Spacer(),
+                        if (address.isDefault)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 9,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: StatusTone.success.background(isDark),
+                              borderRadius: BorderRadius.circular(
+                                MarketplaceRadius.full,
+                              ),
+                            ),
+                            child: Text(
+                              LocaleKeys.defaultBadge.tr.toUpperCase(),
+                              style: MarketplaceTypography.labelCaps.copyWith(
+                                fontSize: 9,
+                                color:
+                                    StatusTone.success.foreground(isDark),
+                                letterSpacing:
+                                    MarketplaceTypography.isArabic ? 0 : 0.8,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 9),
+                    Text(
+                      address.fullName,
+                      style: MarketplaceTypography.rowTitle.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: palette.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      address.phone,
+                      textDirection: TextDirection.ltr,
+                      textAlign: TextAlign.left,
+                      style: MarketplaceTypography.rowMeta.copyWith(
+                        fontSize: 11,
+                        color: palette.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      address.addressLine1,
+                      style: MarketplaceTypography.rowMeta.copyWith(
+                        fontSize: 11,
+                        height: 1.6,
+                        color: palette.textSecondary,
+                      ),
+                    ),
+                    if (locality.isNotEmpty)
+                      Text(
+                        locality,
+                        style: MarketplaceTypography.rowMeta.copyWith(
+                          fontSize: 11,
+                          height: 1.6,
+                          color: palette.textSecondary,
+                        ),
+                      ),
+                    if (address.location != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on_outlined,
+                            size: 12,
+                            color: palette.textMuted,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              address.location!.address.isEmpty
+                                  ? LocaleKeys.locationPinned.tr
+                                  : address.location!.address,
+                              style: MarketplaceTypography.rowMeta.copyWith(
+                                color: palette.textMuted,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: palette.hairline)),
+                ),
+                child: Row(
+                  children: [
+                    if (address.isDefault)
+                      Text(
+                        LocaleKeys.defaultAddress.tr,
+                        style: MarketplaceTypography.pillLabel.copyWith(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
+                          color: StatusTone.success.foreground(isDark),
+                        ),
+                      )
+                    else
+                      _Action(
+                        label: LocaleKeys.setAsDefault.tr,
+                        onTap: onSetDefault,
+                        color: palette.brand,
+                      ),
+                    const Spacer(),
+                    _Action(
+                      label: LocaleKeys.delete.tr,
+                      onTap: onDelete,
+                      color: StatusTone.danger.foreground(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class AddressCard extends StatelessWidget {
-  const AddressCard({super.key, required this.dto});
+class _Action extends StatelessWidget {
+  const _Action({
+    required this.label,
+    required this.onTap,
+    required this.color,
+  });
 
-  final AddressCardDto dto;
+  final String label;
+  final VoidCallback onTap;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: dto.isPickMode ? dto.onPick : null,
-      onLongPress: (dto.isPickMode || dto.isDefault) ? null : dto.onSetDefault,
-      child: Container(
-        padding: const EdgeInsets.all(MarketplaceSpacing.md),
-        decoration: BoxDecoration(
-          color: MarketplaceColors.surface,
-          borderRadius: MarketplaceRadius.cardBR,
-          border: Border.all(
-            color: dto.isDefault
-                ? MarketplaceColors.primary
-                : MarketplaceColors.stroke,
-            width: dto.isDefault ? 1.5 : 1.0,
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _LocationIcon(),
-            const SizedBox(width: MarketplaceSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          dto.label,
-                          style: MarketplaceTypography.sectionSubheading,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      if (dto.isDefault) ...[
-                        const SizedBox(width: MarketplaceSpacing.xs),
-                        const _DefaultBadge(),
-                      ],
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    dto.fullName,
-                    style: MarketplaceTypography.descriptionBody.copyWith(
-                      color: MarketplaceColors.textBody,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    dto.phone,
-                    style: MarketplaceTypography.descriptionBody,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _buildAddressLine(),
-                    style: MarketplaceTypography.descriptionBody,
-                    maxLines: 3,
-                  ),
-                ],
-              ),
-            ),
-            if (!dto.isPickMode) ...[
-            const SizedBox(width: MarketplaceSpacing.xs),
-            Column(
-              children: [
-                _ActionButton(
-                  icon: Icons.edit_outlined,
-                  semanticLabel: LocaleKeys.edit,
-                  onTap: dto.onEdit,
-                ),
-                const SizedBox(height: MarketplaceSpacing.xs),
-                _ActionButton(
-                  icon: Icons.delete_outline,
-                  semanticLabel: LocaleKeys.delete,
-                  onTap: dto.onDelete,
-                ),
-              ],
-            ),
-            ], // end if (!dto.isPickMode)
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _buildAddressLine() {
-    final parts = [
-      dto.addressLine1,
-      if (dto.addressLine2 != null && dto.addressLine2!.isNotEmpty)
-        dto.addressLine2!,
-      dto.cityName,
-      dto.state,
-    ];
-    return parts.join(', ');
-  }
-}
-
-class _LocationIcon extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: MarketplaceColors.secondary.withValues(alpha: 0.5),
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(
-        Icons.location_on,
-        color: MarketplaceColors.primary,
-        size: 20,
-      ),
-    );
-  }
-}
-
-class _DefaultBadge extends StatelessWidget {
-  const _DefaultBadge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: MarketplaceColors.primary,
-        borderRadius: BorderRadius.circular(MarketplaceRadius.full),
-      ),
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: Text(
-        LocaleKeys.defaultBadge.tr,
-        style: MarketplaceTypography.smallButton,
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.icon,
-    required this.semanticLabel,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String semanticLabel;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(MarketplaceRadius.sm),
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(
-            icon,
-            size: 20,
-            color: MarketplaceColors.textSecondary,
-          ),
+        label,
+        style: MarketplaceTypography.pillLabel.copyWith(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          color: color,
         ),
       ),
     );

@@ -11,6 +11,9 @@ class ProductModel {
   final String vendorId;
   final String vendorNameAr;
   final String vendorNameEn;
+
+  /// `store_logo_url`. Empty when the payload omitted it.
+  final String vendorLogoUrl;
   final String price;
   final double? originalPrice;
   final int? discountPercent;
@@ -27,6 +30,7 @@ class ProductModel {
     required this.descriptionEn,
     required this.vendorNameAr,
     required this.vendorNameEn,
+    this.vendorLogoUrl = '',
     required this.vendorId,
     required this.price,
     this.originalPrice,
@@ -37,26 +41,42 @@ class ProductModel {
     required this.categoryId,
   });
 
+  /// Every field is read defensively. A vendor can save a product before
+  /// uploading a photo, and the list payload then carries `image_url: null`
+  /// with `images: []` — a non-null cast there threw and took the whole page
+  /// down with it, surfacing as a generic error on a grid of 36 good products.
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    final imageUrls = (json['images'] as List<dynamic>? ?? const [])
+        .whereType<String>()
+        .toList();
+
     return ProductModel(
-      id: json['id'] as String,
-      nameAr: json['name_ar'] as String,
-      nameEn: json['name_en'] as String,
-      vendorNameAr: json['store_name_ar'] as String,
-      vendorNameEn: json['store_name_en'] as String,
-      vendorId: json['vendor_id'] as String,
-      price: (json['base_price'] as String),
+      id: json['id']?.toString() ?? '',
+      nameAr: json['name_ar'] as String? ?? '',
+      nameEn: json['name_en'] as String? ?? '',
+      vendorNameAr: json['store_name_ar'] as String? ?? '',
+      vendorNameEn: json['store_name_en'] as String? ?? '',
+      vendorLogoUrl: json['store_logo_url'] as String? ?? '',
+      vendorId: json['vendor_id']?.toString() ?? '',
+      price: json['base_price']?.toString() ?? '0',
       originalPrice: json['originalPrice'] != null
           ? (json['originalPrice'] as num).toDouble()
           : null,
       discountPercent: json['discountPercent'] as int?,
-      // rating: (json['rating'] as num).toDouble(),
-      rating: 2.0,
-      imageUrl: json['image_url'] as String,
-      imageUrls: List<String>.from(json['images'] as List<dynamic>),
-      descriptionAr: json['description_ar'] as String,
-      descriptionEn: json['description_en'] as String,
-      categoryId: json['category_id'] as String,
+      // The product payload carries no rating — there is no rating field in the
+      // spec and no reviews endpoint anywhere in it. Zero means "not rated",
+      // which is what every card checks before drawing stars; a hardcoded 2.0
+      // put a fake two-star score on every product in the app.
+      rating: 0,
+      // Falls back to the first gallery image so a product with only `images`
+      // populated still draws a thumbnail; empty means the card shows its
+      // placeholder.
+      imageUrl: json['image_url'] as String? ??
+          (imageUrls.isEmpty ? '' : imageUrls.first),
+      imageUrls: imageUrls,
+      descriptionAr: json['description_ar'] as String? ?? '',
+      descriptionEn: json['description_en'] as String? ?? '',
+      categoryId: json['category_id']?.toString() ?? '',
     );
   }
 
@@ -103,7 +123,8 @@ class ProductModel {
       sellerName:
           Get.locale?.languageCode == 'ar' ? vendorNameAr : vendorNameEn,
       sellerId: vendorId,
-      price: double.parse(price),
+      sellerLogoUrl: vendorLogoUrl,
+      price: double.tryParse(price) ?? 0,
       originalPrice: originalPrice,
       discountPercent: discountPercent,
       rating: rating,

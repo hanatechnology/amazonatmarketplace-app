@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/components/marketplace/marketplace_bottom_nav.dart';
-import '../../../core/theme/marketplace_colors.dart';
+import '../../../core/theme/marketplace_palette.dart';
 import '../../controllers/marketplace/main_navigation_controller.dart';
 
 // Import tab root pages
@@ -48,8 +48,10 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
         }
       },
       child: Scaffold(
-        
-        backgroundColor: MarketplaceColors.surface,
+        // The tab bar floats over the content as a pill, so the body has to
+        // run underneath it.
+        extendBody: true,
+        backgroundColor: context.palette.background,
         body: Obx(() => IndexedStack(
               index: controller.currentIndex.value,
               children: List.generate(

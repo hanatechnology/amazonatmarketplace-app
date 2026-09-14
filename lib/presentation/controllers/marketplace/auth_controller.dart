@@ -15,6 +15,7 @@ import 'package:marketplace/domain/usecases/marketplace/auth/request_otp_use_cas
 import 'package:marketplace/domain/usecases/marketplace/auth/verify_otp_use_case.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../app/routes/app_routes.dart';
+import '../../../core/errors/error_messages.dart';
 
 const String kSendOtp   = 'send_otp';
 const String kVerifyOtp = 'verify_otp';
@@ -196,9 +197,16 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
       onSuccess: (_, __) {
         // The account exists from here on, so a later edit of the phone number
         // starts again from the plain sign-in form.
+        final wasRegistering = needsRegistration.value;
         needsRegistration.value = false;
         _startResendTimer();
-        Get.toNamed(Routes.MARKETPLACE_VERIFY);
+        if (wasRegistering) {
+          // Replace the create-account screen: going "back" from the OTP should
+          // land on the phone step, not on a form that is already submitted.
+          Get.offNamed(Routes.MARKETPLACE_VERIFY);
+        } else {
+          Get.toNamed(Routes.MARKETPLACE_VERIFY);
+        }
       },
     );
 
@@ -241,20 +249,11 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
     }
   }
 
-  /// Guest login — skip auth entirely
-  void continueAsGuest() => Get.offAllNamed(Routes.MARKETPLACE_MAIN);
-
-  /// Social login: Google
-  Future<void> continueWithGoogle() async {
-    // TODO: Implement Google Sign-In
-    Get.offAllNamed(Routes.MARKETPLACE_MAIN);
-  }
-
-  /// Social login: Apple
-  Future<void> continueWithApple() async {
-    // TODO: Implement Apple Sign-In
-    Get.offAllNamed(Routes.MARKETPLACE_MAIN);
-  }
+  // Guest browsing and social sign-in are deliberately absent. Every content
+  // endpoint — /products, /categories, /stores, /banners — declares
+  // `clientAccessToken` and documents a 401, so there is nothing to browse
+  // without a token; and no OAuth endpoint exists in the contract at all. Both
+  // used to route to Home with no session, which produced a wall of 401s.
 
   // ── Error handling ─────────────────────────────────────
 
@@ -266,11 +265,12 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
       case AuthErrorCodes.registrationRequired:
         needsRegistration.value = true;
         phoneError.value = null;
-        Get.snackbar(
-          LocaleKeys.noAccountFound.tr,
-          LocaleKeys.signUpPrompt.tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        // `request-otp` will not send a code for an unknown number until it has
+        // first_name and email, so the details are collected BEFORE the OTP —
+        // a post-verification "complete your profile" step is impossible here.
+        if (Get.currentRoute != Routes.MARKETPLACE_COMPLETE_DETAILS) {
+          Get.toNamed(Routes.MARKETPLACE_COMPLETE_DETAILS);
+        }
         return;
 
       // A code is still live; keep the user on the OTP screen and count down
@@ -290,21 +290,25 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
         return;
     }
 
-    // Field-level failures land on the input they belong to.
+    // Field-level failures land on the input they belong to, with the message
+    // translated from the backend's constraint code — its own `message` is
+    // English-only.
     if (exception is ValidationException) {
-      if (exception.fieldCode('email') != null) {
-        emailError.value = state.message;
+      final email = exception.fieldMessage('email');
+      if (email != null) {
+        emailError.value = email;
         needsRegistration.value = true;
         return;
       }
-      if (exception.fieldCode('first_name') != null) {
-        firstNameError.value = state.message;
+      final firstName = exception.fieldMessage('first_name');
+      if (firstName != null) {
+        firstNameError.value = firstName;
         needsRegistration.value = true;
         return;
       }
     }
 
-    phoneError.value = state.message;
+    phoneError.value = exception?.localizedMessage ?? state.message;
   }
 
   void _handleVerifyOtpError(AppStateError<AuthResponseModel> state) {
@@ -320,7 +324,7 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
       return;
     }
 
-    otpError.value = state.message;
+    otpError.value = exception?.localizedMessage ?? state.message;
   }
 
   final Map<String, AppException?> _lastExceptions = {};

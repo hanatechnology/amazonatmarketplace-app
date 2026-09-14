@@ -87,11 +87,6 @@ class AddressesController extends BaseStateController<GetAddressesUseCase> {
         ?.then((_) => loadAddresses());
   }
 
-  void navigateToEdit(AddressEntity address) {
-    Get.toNamed(Routes.MARKETPLACE_ADD_ADDRESS, arguments: address)
-        ?.then((_) => loadAddresses());
-  }
-
   // ── Delete ────────────────────────────────────────────────
   Future<void> confirmDelete(AddressEntity address) async {
     final confirmed = await AddressDeleteSheet.show(address);

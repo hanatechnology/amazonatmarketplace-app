@@ -28,20 +28,19 @@ class AddressRepository extends BaseRepository<ApiService> {
         body: request.toJson(),
       );
 
-  /// PUT /client/api/v1/addresses/{id}  →  { "data": { ... } }
-  Future<Result<AddressModel>> updateAddress(UpdateAddressRequest request) =>
-      patch(
-        '$_base/${request.id}',
-        (json) => AddressModel.fromJson(json['data'] as Map<String, dynamic>),
-        body: request.toJson(),
-      );
-
   /// DELETE /client/api/v1/addresses/{id}
   Future<Result<void>> deleteAddress(String id) => delete('$_base/$id', (_) {});
 
-  /// PATCH /client/api/v1/addresses/{id}/set-default
-  Future<Result<void>> setDefaultAddress(String id) =>
-      patch('$_base/$id/set-default', (_) {}, body: {});
+  /// Promotes an address to default.
+  ///
+  /// There is no `/addresses/{id}/set-default` endpoint in the spec — this used
+  /// to call one and would have 404'd. The documented route is a partial update
+  /// carrying only `is_default`.
+  Future<Result<AddressModel>> setDefaultAddress(String id) => patch(
+        '$_base/$id',
+        (json) => AddressModel.fromJson(json['data'] as Map<String, dynamic>),
+        body: UpdateAddressRequest.setDefault(id).toJson(),
+      );
 
   /// GET /client/api/v1/dropdowns/cities  →  { "data": [...] }
   Future<Result<List<CityModel>>> getCities() => get(

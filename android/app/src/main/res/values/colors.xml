@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- MarketplacePalette.light.background -->
+    <color name="launch_background">#F5F7EE</color>
+    <!-- Launcher icon ground. Same cream as the splash, and deliberately not
+         themed: Android does not swap app icons with the system theme. -->
+    <color name="ic_launcher_background">#F5F7EE</color>
+</resources>

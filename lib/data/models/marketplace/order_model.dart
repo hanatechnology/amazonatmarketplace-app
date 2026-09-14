@@ -81,6 +81,7 @@ class OrderModel {
     required this.createdAt,
     this.vendorNameAr,
     this.vendorNameEn,
+    this.vendorLogoUrl,
     this.cancellationReason,
     this.refundedAt,
     this.shippingAddress,
@@ -99,6 +100,9 @@ class OrderModel {
   final DateTime createdAt;
   final String? vendorNameAr;
   final String? vendorNameEn;
+
+  /// `vendor.logo_url` — present on the detail payload, absent from the list.
+  final String? vendorLogoUrl;
   final String? cancellationReason;
   final DateTime? refundedAt;
   final AddressModel? shippingAddress;
@@ -126,6 +130,7 @@ class OrderModel {
           DateTime.tryParse(json['created_at'] as String? ?? '') ?? DateTime.now(),
       vendorNameAr: vendor?['store_name_ar'] as String?,
       vendorNameEn: vendor?['store_name_en'] as String?,
+      vendorLogoUrl: vendor?['logo_url'] as String?,
       cancellationReason: json['cancellation_reason'] as String?,
       refundedAt: DateTime.tryParse(json['refunded_at'] as String? ?? ''),
       shippingAddress: address == null ? null : AddressModel.fromJson(address),
@@ -148,6 +153,7 @@ class OrderModel {
       status: OrderStatus.fromWire(status),
       paymentMethod: PaymentMethod.fromWire(paymentMethod),
       vendorId: vendorId,
+      vendorLogoUrl: vendorLogoUrl ?? '',
       vendorName: vendorName,
       subtotal: double.tryParse(subtotal) ?? 0,
       shippingFee: double.tryParse(shippingFee) ?? 0,

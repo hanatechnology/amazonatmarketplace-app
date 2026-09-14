@@ -1,9 +1,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Release and profile builds get no manifest from src/debug, so the
+         permission has to live here or every API call fails in a signed APK. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <!-- Android 13+ requires the user to grant notifications at runtime. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Saving a refund receipt to the gallery. Android 10+ writes via
+         MediaStore and needs no permission at all. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/>
+
+    <!-- Centring the address map on the customer. Foreground only: the app
+         never reads a position with no map on screen. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
     <application
-        android:label="marketplace"
+        android:label="@string/app_name"
         android:name=".AmazonatApplication"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -34,6 +48,16 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
+        <!-- Google Maps SDK key, used by the address location picker.
+             Supply it per build with:
+               a dart-define is NOT enough — this is a
+               native lookup, so set MAPS_API_KEY in android/local.properties
+               (or your CI secret store) and it is injected by the Gradle
+               manifest placeholder below. A missing key renders a grey tile
+               grid, not a crash. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

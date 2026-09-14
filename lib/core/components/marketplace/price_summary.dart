@@ -42,7 +42,7 @@ class PriceSummary extends StatelessWidget {
           const SizedBox(height: MarketplaceSpacing.md),
           // Divider
           Divider(
-            color: MarketplaceColors.stroke.withOpacity(0.3),
+            color: MarketplaceColors.stroke.withValues(alpha: 0.3),
             height: 1,
           ),
           const SizedBox(height: MarketplaceSpacing.md),
@@ -61,6 +61,7 @@ class PriceSummary extends StatelessWidget {
               onPressed: onCheckout,
               style: ElevatedButton.styleFrom(
                 backgroundColor: MarketplaceColors.primary,
+                foregroundColor: MarketplaceColors.onPrimary,
                 shape: RoundedRectangleBorder(
                   borderRadius: MarketplaceRadius.buttonBR,
                 ),

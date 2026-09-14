@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:marketplace/core/bases/base_state_controller.dart';
 import 'package:marketplace/core/localization/locale_keys.dart';
@@ -31,6 +32,23 @@ class OrderDetailsController
   }
 
   Future<void> refreshOrderDetails() => loadOrderDetails();
+
+  /// Anchors the refund tracker card so the strip at the top can scroll to it.
+  final GlobalKey refundTrackerKey = GlobalKey();
+
+  /// Brings the tracker into view. A no-op when the card is not mounted — the
+  /// strip is only tappable when a refund exists, but the list is virtualised
+  /// and the key can be unattached mid-rebuild.
+  Future<void> scrollToRefundTracker() async {
+    final context = refundTrackerKey.currentContext;
+    if (context == null) return;
+    await Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+      alignment: 0.08,
+    );
+  }
 
   OrderEntity? get order => getOperationData<OrderEntity>(kOrderDetails);
 

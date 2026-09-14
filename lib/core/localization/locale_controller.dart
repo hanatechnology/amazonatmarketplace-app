@@ -16,6 +16,18 @@ class LocaleController extends GetxController {
     Locale('ar', 'SA'),
   ];
 
+  /// Read straight from storage, before GetX is wired up, so
+  /// `GetMaterialApp.locale` starts on the customer's language — and stays
+  /// there when the app rebuilds. A hard-coded `locale:` is re-asserted on
+  /// every rebuild (a theme change is enough), which silently dropped the app
+  /// back to English mid-session.
+  static Locale get storedLocale {
+    final stored = StorageService.instance.read<String>(_storageKey);
+    final parts = stored?.split('_') ?? const [];
+    if (parts.length != 2) return const Locale('en', 'US');
+    return Locale(parts[0], parts[1]);
+  }
+
   @override
   void onInit() {
     super.onInit();

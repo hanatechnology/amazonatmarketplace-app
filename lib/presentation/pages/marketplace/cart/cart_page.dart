@@ -1,196 +1,130 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../../../app/routes/app_routes.dart';
+import '../../../../core/components/marketplace/cart/cart_vendor_group_card.dart';
+import '../../../../core/components/marketplace/empty_cart_view.dart';
 import '../../../../core/localization/locale_keys.dart';
-import '../../../../core/theme/marketplace_colors.dart';
+import '../../../../core/theme/marketplace_palette.dart';
 import '../../../../core/theme/marketplace_spacing.dart';
 import '../../../../core/theme/marketplace_typography.dart';
-import '../../../../core/theme/marketplace_radius.dart';
-import '../../../../core/components/marketplace/cart_item_card.dart';
-import '../../../../core/components/marketplace/cart_price_summary.dart';
-import '../../../../core/components/marketplace/empty_cart_view.dart';
-import '../../../../core/components/marketplace/loading_shimmer.dart';
+import '../../../../core/utils/price_formatter.dart';
+import '../../../../domain/entities/marketplace/cart_vendor_group.dart';
 import '../../../controllers/marketplace/cart_controller.dart';
+import '../../../controllers/marketplace/main_navigation_controller.dart';
 
+/// The cart, grouped by store.
+///
+/// An order can only carry one vendor's items, so each store's group has its
+/// own subtotal and its own checkout — paying for one leaves the others in the
+/// cart. That is what the web client does, and why there is no global CTA and
+/// no per-item selection here.
 class CartPage extends GetView<CartController> {
   const CartPage({super.key});
 
+  static const double _gutter = 20.0;
+
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+
     return Scaffold(
-      backgroundColor: MarketplaceColors.surface,
-      appBar: AppBar(
-        title: Text(LocaleKeys.myCart.tr),
-        automaticallyImplyLeading: false, // Hidden when displayed in tab
-        elevation: 0,
-        backgroundColor: MarketplaceColors.surface,
-        foregroundColor: MarketplaceColors.textPrimary,
-        centerTitle: false,
-        actions: [
-          Padding(
-            padding:
-                const EdgeInsets.only(right: MarketplaceSpacing.screenPaddingH),
-            child: Obx(() {
-              if (controller.isLoading.value || controller.items.isEmpty) {
-                return const SizedBox.shrink();
-              }
-              return Center(
-                child: Text(
-                  LocaleKeys.items.trParams({
-                    'count': controller.items.length.toString(),
-                  }),
-                  style: MarketplaceTypography.bodySecondary.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const _LoadingView();
-        }
+      backgroundColor: palette.background,
+      body: SafeArea(
+        bottom: false,
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const _CartLoading();
+          }
 
-        if (controller.items.isEmpty) {
-          return EmptyCartView(
-            onShopNow: () => Get.back(), // Typically Navigates home or pops tab
-          );
-        }
+          if (!controller.hasItems) {
+            return EmptyCartView(onShopNow: _goShopping);
+          }
 
-        return Column(
-          children: [
-            _ToolbarRow(controller: controller),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.only(
-                  left: MarketplaceSpacing.screenPaddingH,
-                  right: MarketplaceSpacing.screenPaddingH,
-                  top: MarketplaceSpacing.sm,
-                  bottom:
-                      MarketplaceSpacing.xxl + 80, // Space for fab/bottom area
-                ),
-                itemCount: controller.items.length, // +1 for summary
-                separatorBuilder: (_, index) {
-                  if (index == controller.items.length - 1) {
-                    return const SizedBox(height: MarketplaceSpacing.lg);
-                  }
-                  return const SizedBox(height: MarketplaceSpacing.md);
-                },
-                itemBuilder: (context, index) {
-                  final item = controller.items[index];
-                  return Dismissible(
-                    key: Key(item.productId),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding:
-                          const EdgeInsets.only(right: MarketplaceSpacing.md),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD32F2F),
-                        borderRadius:
-                            BorderRadius.circular(MarketplaceRadius.cartItem),
+          final groups = controller.vendorGroups;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CartHeader(groups: groups),
+              Expanded(
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(_gutter, 4, _gutter, 12),
+                  itemCount: groups.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, index) {
+                    final group = groups[index];
+                    return CartVendorGroupCard(
+                      group: group,
+                      onCheckout: () => controller.checkoutGroup(group),
+                      onOpenStore: () => Get.toNamed(
+                        Routes.MARKETPLACE_SELLER,
+                        arguments: group.vendorId,
                       ),
-                      child: const Icon(Icons.delete_outline,
-                          color: Colors.white, size: 28),
-                    ),
-                    onDismissed: (_) => controller.removeItem(item.productId),
-                    child: CartItemCard(
-                      imageUrl: item.imageUrl,
-                      name: item.productName,
-                      sellerName: item.sellerName,
-                      price: item.price,
-                      originalPrice: item.originalPrice,
-                      discountPercent: item.discountPercent,
-                      quantity: item.quantity,
-                      isSelected: item.isSelected,
-                      onTap: () => Get.toNamed('/marketplace/product',
-                          arguments: item.productId),
-                      onSelect: (_) =>
-                          controller.toggleSelection(item.productId),
-                      onDelete: () => controller.removeItem(item.productId),
-                      onQuantityChange: (qty) =>
-                          controller.updateQuantity(item.productId, qty),
-                    ),
-                  );
-                },
+                      onQuantityChanged: (item, quantity) =>
+                          controller.updateQuantity(item.productId, quantity),
+                      onRemove: (item) => controller.removeItem(item.productId),
+                    );
+                  },
+                ),
               ),
-            ),
-            CartPriceSummary(
-              data: CartPriceSummaryDto(
-                subtotal: controller.subtotal,
-                discount: controller.discount,
-                total: controller.total,
-              ),
-            )
-          ],
-        );
-      }),
-      bottomNavigationBar: Obx(() {
-        if (controller.isLoading.value || controller.items.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        return _CheckoutBottomBar(controller: controller);
-      }),
+              _CartSummaryBar(groups: groups),
+            ],
+          );
+        }),
+      ),
     );
+  }
+
+  /// The cart is a tab, so "shop now" switches tabs rather than popping.
+  static void _goShopping() {
+    if (Get.isRegistered<MainNavigationController>()) {
+      Get.find<MainNavigationController>().changePage(0);
+    }
   }
 }
 
-class _ToolbarRow extends StatelessWidget {
-  const _ToolbarRow({required this.controller});
+class _CartHeader extends StatelessWidget {
+  const _CartHeader({required this.groups});
 
-  final CartController controller;
+  final List<CartVendorGroup> groups;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(
-          horizontal: MarketplaceSpacing.screenPaddingH),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final palette = context.palette;
+    final itemCount = groups.fold<int>(0, (sum, g) => sum + g.itemCount);
+
+    return Padding(
+      padding:
+          const EdgeInsets.fromLTRB(CartPage._gutter, 12, CartPage._gutter, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Select All Checkbox
-          GestureDetector(
-            onTap: controller.toggleSelectAll,
-            behavior: HitTestBehavior.opaque,
-            child: Row(
-              children: [
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: controller.isAllSelected
-                          ? MarketplaceColors.primary
-                          : MarketplaceColors.stroke,
-                    ),
-                    borderRadius: BorderRadius.circular(4),
-                    color: controller.isAllSelected
-                        ? MarketplaceColors.primary
-                        : null,
-                  ),
-                  child: controller.isAllSelected
-                      ? const Icon(
-                          Icons.check_rounded,
-                          size: 12,
-                          color: MarketplaceColors.onPrimary,
-                        )
-                      : null,
-                ),
-                const SizedBox(width: MarketplaceSpacing.sm),
-                Text(
-                  LocaleKeys.selectAll.tr,
-                  style: MarketplaceTypography.bodySecondary,
-                ),
-              ],
+          Text(
+            LocaleKeys.myCart.tr,
+            style: MarketplaceTypography.heroDisplay.copyWith(
+              fontSize: 30,
+              color: palette.textPrimary,
             ),
           ),
-          // Selected Count
+          const SizedBox(height: 4),
           Text(
-            LocaleKeys.items.trParams(
-                {'count': controller.selectedItems.length.toString()}),
-            style: MarketplaceTypography.bodySecondary,
+            LocaleKeys.cartItemsFrom.trParams({
+              'items': LocaleKeys.itemsCountOne.trPluralParams(
+                LocaleKeys.itemsCount,
+                itemCount,
+                {'count': '$itemCount'},
+              ),
+              'stores': LocaleKeys.storesCountOne.trPluralParams(
+                LocaleKeys.storesCount,
+                groups.length,
+                {'count': '${groups.length}'},
+              ),
+            }),
+            style: MarketplaceTypography.rowMeta.copyWith(
+              fontSize: 11.5,
+              color: palette.textSecondary,
+            ),
           ),
         ],
       ),
@@ -198,61 +132,109 @@ class _ToolbarRow extends StatelessWidget {
   }
 }
 
-class _CheckoutBottomBar extends StatelessWidget {
-  const _CheckoutBottomBar({required this.controller});
+/// Per-store lines, then the cart total.
+///
+/// The total is informational — it is never charged as one amount, because each
+/// store is paid for separately. The note under it says so.
+class _CartSummaryBar extends StatelessWidget {
+  const _CartSummaryBar({required this.groups});
 
-  final CartController controller;
+  final List<CartVendorGroup> groups;
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(
-          MarketplaceSpacing.screenPaddingH,
-          MarketplaceSpacing.sm,
-          MarketplaceSpacing.screenPaddingH,
-          MarketplaceSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: MarketplaceColors.surface,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              offset: const Offset(0, -4),
-              blurRadius: 8,
-            )
-          ],
-        ),
-        child: SizedBox(
-          height: MarketplaceSpacing.buttonHeight,
-          child: ElevatedButton(
-            onPressed:
-                controller.hasSelection && !controller.isCheckingOut.value
-                    ? controller.checkout
-                    : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: MarketplaceColors.primary,
-              foregroundColor: MarketplaceColors.onPrimary,
-              disabledBackgroundColor:
-                  MarketplaceColors.primary.withOpacity(0.5),
-              disabledForegroundColor: Colors.white70,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(MarketplaceRadius.button),
-              ),
-            ),
-            child: controller.isCheckingOut.value
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Text(
-                    '${LocaleKeys.checkout.tr} (${controller.selectedItems.length})',
-                    style: MarketplaceTypography.buttonLabel,
+    final palette = context.palette;
+    final cartTotal = groups.fold<double>(0, (sum, g) => sum + g.subtotal);
+
+    return Container(
+      width: double.infinity,
+      padding:
+          const EdgeInsets.fromLTRB(CartPage._gutter, 13, CartPage._gutter, 0),
+      decoration: BoxDecoration(
+        color: palette.surface,
+        border: Border(top: BorderSide(color: palette.hairline)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: MarketplaceSpacing.sm),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final group in groups)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          group.vendorName,
+                          style: MarketplaceTypography.rowMeta.copyWith(
+                            fontSize: 11.5,
+                            color: palette.textSecondary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      _Money(
+                        amount: group.subtotal,
+                        size: 11.5,
+                        color: palette.textPrimary,
+                      ),
+                    ],
                   ),
+                ),
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                padding: const EdgeInsets.only(top: 9),
+                decoration: BoxDecoration(
+                  border: Border(top: BorderSide(color: palette.hairline)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        LocaleKeys.cartTotal.tr,
+                        style: MarketplaceTypography.rowTitle.copyWith(
+                          color: palette.textPrimary,
+                        ),
+                      ),
+                    ),
+                    Text.rich(
+                      textDirection: TextDirection.ltr,
+                      TextSpan(
+                        text: PriceFormatter.amount(cartTotal),
+                        style: MarketplaceTypography.priceDisplay.copyWith(
+                          fontSize: 22,
+                          color: palette.textPrimary,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: ' ${PriceFormatter.unit()}',
+                            style: MarketplaceTypography.priceUnit.copyWith(
+                              color: palette.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                LocaleKeys.cartStoresNote.tr,
+                style: MarketplaceTypography.rowMeta.copyWith(
+                  fontSize: 10,
+                  height: 1.6,
+                  color: palette.textMuted,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -260,17 +242,46 @@ class _CheckoutBottomBar extends StatelessWidget {
   }
 }
 
-class _LoadingView extends StatelessWidget {
-  const _LoadingView();
+class _Money extends StatelessWidget {
+  const _Money({required this.amount, required this.size, required this.color});
+
+  final double amount;
+  final double size;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(MarketplaceSpacing.screenPaddingH),
-      itemCount: 3,
-      separatorBuilder: (_, __) =>
-          const SizedBox(height: MarketplaceSpacing.md),
-      itemBuilder: (_, __) => const CartItemShimmer(),
+    final palette = context.palette;
+
+    return Text.rich(
+      textDirection: TextDirection.ltr,
+      TextSpan(
+        text: PriceFormatter.amount(amount),
+        style: MarketplaceTypography.rowMeta.copyWith(
+          fontSize: size,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
+        children: [
+          TextSpan(
+            text: ' ${PriceFormatter.unit()}',
+            style: MarketplaceTypography.priceUnit.copyWith(
+              color: palette.textMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CartLoading extends StatelessWidget {
+  const _CartLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: CircularProgressIndicator(color: context.palette.brand),
     );
   }
 }

@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
+import 'core/config/app_config.dart';
 import 'data/services/push_notification_service.dart';
 import 'data/services/storage_service.dart';
-import 'core/network/dio_client.dart';
+import 'data/services/theme_service.dart';
 import 'core/theme/marketplace_theme.dart';
 import 'core/localization/app_translations.dart';
+import 'core/localization/locale_controller.dart';
 import 'app/routes/app_routes.dart';
 import 'app/routes/app_pages.dart';
 import 'app/bindings/initial_binding.dart';
@@ -13,6 +16,15 @@ import 'app/bindings/initial_binding.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
+  // Version footer on the account page. A platform channel failure must not
+  // stop the app from opening — the footer simply renders nothing.
+  try {
+    final info = await PackageInfo.fromPlatform();
+    AppConfig.setPackageInfo(
+      version: info.version,
+      build: info.buildNumber,
+    );
+  } catch (_) {}
   // Registers the background handler and stream listeners. Never throws — a
   // Firebase problem must not stop the app from opening.
   await PushNotificationService.instance.init();
@@ -28,10 +40,16 @@ class MarketplaceApp extends StatelessWidget {
       title: 'Marketplace',
       debugShowCheckedModeBanner: false,
       theme: MarketplaceTheme.lightTheme,
+      darkTheme: MarketplaceTheme.darkTheme,
+      // Persisted preference, read synchronously so the first frame is already
+      // in the right mode. Defaults to following the device.
+      themeMode: ThemeService.storedMode,
 
       // ── Translation setup ──────────────────────────────
       translations: AppTranslations(),
-      locale: const Locale('en', 'US'),       // Default locale
+      // Persisted, like themeMode above: a const here is re-applied on every
+      // rebuild and drops the app back to English.
+      locale: LocaleController.storedLocale,
       fallbackLocale: const Locale('en', 'US'), // Fallback if key missing
 
       initialRoute: Routes.MARKETPLACE,

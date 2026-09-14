@@ -1,61 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:marketplace/core/theme/marketplace_colors.dart';
-import 'package:marketplace/core/theme/marketplace_spacing.dart';
 
+import 'package:marketplace/core/theme/marketplace_palette.dart';
+
+/// Placeholder shaped like a real notification row — icon tile, title bar,
+/// two body lines — so the list does not jump when the data lands.
 class NotificationTileShimmer extends StatelessWidget {
   const NotificationTileShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    Widget bar(double width, double height) => Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: palette.shimmerBase,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        );
+
     return Shimmer.fromColors(
-      baseColor: MarketplaceColors.stroke.withValues(alpha: 0.4),
-      highlightColor: MarketplaceColors.stroke.withValues(alpha: 0.15),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: MarketplaceSpacing.md,
-          vertical: MarketplaceSpacing.md,
+      baseColor: palette.shimmerBase,
+      highlightColor: palette.shimmerHighlight,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: palette.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: palette.hairline),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: MarketplaceSpacing.sm,
-              height: MarketplaceSpacing.sm,
-              margin: const EdgeInsetsDirectional.only(
-                top: MarketplaceSpacing.xs,
-                end: MarketplaceSpacing.sm,
-              ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: palette.shimmerBase,
+                borderRadius: BorderRadius.circular(11),
               ),
             ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _bar(width: 160, height: 14),
-                  const SizedBox(height: MarketplaceSpacing.sm),
-                  _bar(width: double.infinity, height: 12),
-                  const SizedBox(height: MarketplaceSpacing.xs),
-                  _bar(width: 220, height: 12),
+                  bar(double.infinity, 11),
+                  const SizedBox(height: 8),
+                  bar(double.infinity, 9),
+                  const SizedBox(height: 6),
+                  bar(160, 9),
                 ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _bar({required double width, required double height}) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(MarketplaceSpacing.xs),
       ),
     );
   }

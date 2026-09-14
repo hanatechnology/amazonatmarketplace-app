@@ -1,42 +1,52 @@
+import 'package:marketplace/domain/entities/marketplace/address_location.dart';
+
+/// `PATCH /addresses/{id}` body.
+///
+/// `UpdateAddressDto` requires nothing — it is a partial update — so only the
+/// fields actually being changed are sent. That is what makes "set as default"
+/// a one-key patch rather than a full round-trip of the address.
 class UpdateAddressRequest {
   const UpdateAddressRequest({
     required this.id,
-    required this.label,
-    required this.fullName,
-    required this.phone,
-    required this.addressLine1,
+    this.fullName,
+    this.phone,
+    this.addressLine1,
+    this.cityId,
+    this.location,
+    this.label,
     this.addressLine2,
-    required this.cityId,
-    required this.state,
-    required this.country,
-    this.postalCode,
-    required this.isDefault,
+    this.state,
+    this.country,
+    this.isDefault,
   });
 
+  /// The documented way to promote an address: there is no
+  /// `/addresses/{id}/set-default` endpoint in the spec.
+  factory UpdateAddressRequest.setDefault(String id) =>
+      UpdateAddressRequest(id: id, isDefault: true);
+
   final String id;
-  final String label;
-  final String fullName;
-  final String phone;
-  final String addressLine1;
+  final String? fullName;
+  final String? phone;
+  final String? addressLine1;
+  final String? cityId;
+  final AddressLocation? location;
+  final String? label;
   final String? addressLine2;
-  final String cityId;
-  final String state;
-  final String country;
-  final String? postalCode;
-  final bool isDefault;
+  final String? state;
+  final String? country;
+  final bool? isDefault;
 
   Map<String, dynamic> toJson() => {
-    'label': label,
-    'full_name': fullName,
-    'phone': phone,
-    'address_line_1': addressLine1,
-    if (addressLine2 != null && addressLine2!.isNotEmpty)
-      'address_line_2': addressLine2,
-    'city_id': cityId,
-    'state': state,
-    'country': country,
-    if (postalCode != null && postalCode!.isNotEmpty)
-      'postal_code': postalCode,
-    'is_default': isDefault,
-  };
+        if (fullName != null) 'full_name': fullName,
+        if (phone != null) 'phone': phone,
+        if (addressLine1 != null) 'address_line_1': addressLine1,
+        if (cityId != null) 'city_id': cityId,
+        if (location != null) 'location': location!.toJson(),
+        if (label != null) 'label': label,
+        if (addressLine2 != null) 'address_line_2': addressLine2,
+        if (state != null) 'state': state,
+        if (country != null) 'country': country,
+        if (isDefault != null) 'is_default': isDefault,
+      };
 }

@@ -36,6 +36,7 @@ class ProductFilter {
     this.maxPrice,
     this.categoryId,
     this.categoryName,
+    this.featuredSection,
   });
 
   final ProductSortOption sort;
@@ -44,11 +45,16 @@ class ProductFilter {
   final String? categoryId;
   final String? categoryName;
 
+  /// `NEW_ARRIVALS` / `BEST_SELLERS` / `ADMIN_PICKS` — the only values the
+  /// endpoint's `featured_section` enum accepts.
+  final String? featuredSection;
+
   bool get hasActiveFilters =>
       sort != ProductSortOption.relevance ||
       minPrice != null ||
       maxPrice != null ||
-      categoryId != null;
+      categoryId != null ||
+      featuredSection != null;
 
   bool get hasPriceRange => minPrice != null || maxPrice != null;
 
@@ -63,6 +69,7 @@ class ProductFilter {
         if (sort.sortBy != null) 'sortBy': sort.sortBy,
         if (sort.sortDirection != null) 'sortDirection': sort.sortDirection,
         if (categoryId != null) 'category_id': categoryId,
+        if (featuredSection != null) 'featured_section': featuredSection,
         if (minPrice != null) 'filters[gte_base_price]': minPrice,
         if (maxPrice != null) 'filters[lte_base_price]': maxPrice,
       };
@@ -73,8 +80,10 @@ class ProductFilter {
     double? maxPrice,
     String? categoryId,
     String? categoryName,
+    String? featuredSection,
     bool clearPriceRange = false,
     bool clearCategory = false,
+    bool clearFeatured = false,
   }) {
     return ProductFilter(
       sort: sort ?? this.sort,
@@ -82,6 +91,8 @@ class ProductFilter {
       maxPrice: clearPriceRange ? null : (maxPrice ?? this.maxPrice),
       categoryId: clearCategory ? null : (categoryId ?? this.categoryId),
       categoryName: clearCategory ? null : (categoryName ?? this.categoryName),
+      featuredSection:
+          clearFeatured ? null : (featuredSection ?? this.featuredSection),
     );
   }
 }

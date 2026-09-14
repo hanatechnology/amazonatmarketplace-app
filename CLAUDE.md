@@ -12,6 +12,7 @@ Next.js web client, which is nearly feature-complete and serves as the behaviora
 | API contract | MCP server `amazonat-client` (local OAS snapshot, 34 paths) |
 | Build patterns | Skill `marketplace-getx-development` |
 | Parity workflow | Skill `amazonat-feature-parity` |
+| Running / screenshotting | Skill `run-marketplace-app` |
 
 ---
 
@@ -90,6 +91,30 @@ page → binding → route. Follow it exactly.
 - Add new keys to `lib/core/localization/locale_keys.dart` AND both translation
   files. Reuse the web's i18n keys from `messages/` where the wording matches.
 - App is bilingual AR/EN with RTL. Use directional widgets and `EdgeInsetsDirectional`.
+
+**Design language — Arabic RTL first (binding, all new design and UI work)**
+- Design every screen in **Arabic RTL first**, then check it in English LTR.
+  Arabic is the primary audience; English must look equally good, but it is the
+  second pass, not the first. A layout that only resolves in LTR is not done.
+- Mock-ups on the Doop canvas ship the Arabic RTL board as the primary artboard;
+  the English LTR board sits beside it as the mirror check.
+- Never hard-code `left`/`right`. Use `EdgeInsetsDirectional`, `PositionedDirectional`,
+  `AlignmentDirectional`, `start`/`end`, and directional icons (a back chevron
+  flips; a clock does not).
+- Arabic runs longer than English — allow ~30% more width for the same string, and
+  never size a control to fit its English label exactly.
+- Numbers, prices and order numbers stay Latin-digit and LTR inside Arabic text.
+  Currency sits after the figure in both languages (`40.00 LYD` / `40.00 د.ل`).
+- **Type pairing** (`MarketplaceTypography`):
+  Latin body **Plus Jakarta Sans** ↔ Arabic body **IBM Plex Sans Arabic** (same
+  humanist skeleton, low stroke contrast, matching 400/500/600/700).
+  Latin display **Instrument Serif** ↔ Arabic display **Amiri** (naskh, the
+  editorial counterpart; regular weight only).
+  Both fallbacks are wired through `fontFamilyFallback` /
+  `displayFontFamilyFallback`, so Arabic resolves automatically — do not set a
+  family per locale in widgets.
+- Arabic display text needs more line height than Latin: give Amiri headlines at
+  least `height: 1.35` so descenders and dots are not clipped.
 
 **Design system**
 - No `Colors.*`, no magic numbers. Use `MarketplaceColors`, `MarketplaceSpacing`,

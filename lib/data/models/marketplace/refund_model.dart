@@ -1,18 +1,7 @@
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:marketplace/domain/entities/marketplace/refund_entity.dart';
 
-bool _isArabic() => Get.locale?.languageCode == 'ar';
-
-/// Picks the label for the active locale, falling back to the other language
-/// when only one was filled in.
-String _localized(String? ar, String? en) {
-  final arabic = ar ?? '';
-  final english = en ?? '';
-  return _isArabic()
-      ? (arabic.isNotEmpty ? arabic : english)
-      : (english.isNotEmpty ? english : arabic);
-}
+// Both languages travel into the entity untouched; the entity picks one per
+// read, so the copy follows a mid-session language switch.
 
 class RefundPayoutModel {
   const RefundPayoutModel({
@@ -23,6 +12,7 @@ class RefundPayoutModel {
     this.processedAt,
     this.payoutMethodNameAr,
     this.payoutMethodNameEn,
+    this.transactionImageUrl,
   });
 
   final String id;
@@ -32,6 +22,7 @@ class RefundPayoutModel {
   final DateTime? processedAt;
   final String? payoutMethodNameAr;
   final String? payoutMethodNameEn;
+  final String? transactionImageUrl;
 
   factory RefundPayoutModel.fromJson(Map<String, dynamic> json) {
     final method = json['payoutMethod'] as Map<String, dynamic>?;
@@ -45,18 +36,20 @@ class RefundPayoutModel {
       processedAt: DateTime.tryParse(json['processed_at'] as String? ?? ''),
       payoutMethodNameAr: method?['name_ar'] as String?,
       payoutMethodNameEn: method?['name_en'] as String?,
+      transactionImageUrl: json['transaction_image_url'] as String?,
     );
   }
 
   RefundPayoutEntity toEntity() {
-    final name = _localized(payoutMethodNameAr, payoutMethodNameEn);
     return RefundPayoutEntity(
       id: id,
       status: PayoutStatus.fromWire(status),
       netAmount: double.tryParse(netAmount) ?? 0,
       requestedAt: requestedAt,
       processedAt: processedAt,
-      payoutMethodName: name.isEmpty ? null : name,
+      payoutMethodNameAr: payoutMethodNameAr,
+      payoutMethodNameEn: payoutMethodNameEn,
+      transactionImageUrl: transactionImageUrl,
     );
   }
 }
@@ -172,9 +165,6 @@ class RefundModel {
   }
 
   RefundEntity toEntity() {
-    final label = _localized(reasonLabelAr, reasonLabelEn);
-    final methodName = _localized(payoutMethodNameAr, payoutMethodNameEn);
-
     return RefundEntity(
       id: id,
       refundType: RefundType.fromWire(refundType),
@@ -185,8 +175,10 @@ class RefundModel {
       reason: reason,
       declineReason: declineReason,
       completedAt: completedAt,
-      reasonLabel: label.isEmpty ? null : label,
-      payoutMethodName: methodName.isEmpty ? null : methodName,
+      reasonLabelAr: reasonLabelAr,
+      reasonLabelEn: reasonLabelEn,
+      payoutMethodNameAr: payoutMethodNameAr,
+      payoutMethodNameEn: payoutMethodNameEn,
       payouts: payouts.map((payout) => payout.toEntity()).toList(),
       collections:
           collections.map((collection) => collection.toEntity()).toList(),
@@ -216,6 +208,7 @@ class RefundReasonModel {
 
   RefundReasonEntity toEntity() => RefundReasonEntity(
         id: id,
-        label: _localized(labelAr, labelEn),
+        labelAr: labelAr,
+        labelEn: labelEn,
       );
 }

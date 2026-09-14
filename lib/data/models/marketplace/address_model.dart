@@ -1,4 +1,5 @@
 import 'package:marketplace/domain/entities/marketplace/address_entity.dart';
+import 'package:marketplace/domain/entities/marketplace/address_location.dart';
 
 class AddressModel {
   const AddressModel({
@@ -13,6 +14,7 @@ class AddressModel {
     required this.country,
     this.postalCode,
     required this.isDefault,
+    this.location,
   });
 
   final String id;
@@ -26,6 +28,7 @@ class AddressModel {
   final String country;
   final String? postalCode;
   final bool isDefault;
+  final AddressLocation? location;
 
   factory AddressModel.fromJson(Map<String, dynamic> json) {
     return AddressModel(
@@ -40,6 +43,7 @@ class AddressModel {
       country: json['country'] as String? ?? '',
       postalCode: json['postal_code'] as String?,
       isDefault: json['is_default'] as bool? ?? false,
+      location: AddressLocation.fromJson(json['location']),
     );
   }
 
@@ -55,6 +59,7 @@ class AddressModel {
     'country': country,
     if (postalCode != null) 'postal_code': postalCode,
     'is_default': isDefault,
+    if (location != null) 'location': location!.toJson(),
   };
 
   AddressEntity toEntity() => AddressEntity(
@@ -69,5 +74,6 @@ class AddressModel {
     country: country,
     postalCode: postalCode,
     isDefault: isDefault,
+    location: location,
   );
 }

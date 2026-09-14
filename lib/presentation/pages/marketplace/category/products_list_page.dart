@@ -1,377 +1,337 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/theme/marketplace_colors.dart';
-import '../../../../core/theme/marketplace_typography.dart';
-import '../../../../core/theme/marketplace_spacing.dart';
-import '../../../../core/theme/marketplace_radius.dart';
-import '../../../../core/localization/locale_keys.dart';
-import '../../../../core/components/marketplace/marketplace_app_bar.dart';
-import '../../../../core/components/marketplace/search_bar_widget.dart';
-import '../../../../core/components/marketplace/product_card.dart';
-import '../../../../core/components/marketplace/loading_shimmer.dart';
-import '../../../../core/components/marketplace/product_filter_bottom_sheet.dart';
-import '../../../controllers/marketplace/products_list_controller.dart';
-import '../../../../domain/entities/marketplace/product_entity.dart';
-import '../../../../app/routes/app_routes.dart';
 
-class ProductsListPage extends StatelessWidget {
+import '../../../../core/components/marketplace/browse/active_filter_chips.dart';
+import '../../../../core/components/marketplace/browse/browse_results_grid.dart';
+import '../../../../core/components/marketplace/product_filter_bottom_sheet.dart';
+import '../../../../core/localization/locale_keys.dart';
+import '../../../../core/theme/marketplace_palette.dart';
+import '../../../../core/theme/marketplace_radius.dart';
+import '../../../../core/theme/marketplace_typography.dart';
+import '../../../../domain/entities/marketplace/product_entity.dart';
+import '../../../controllers/marketplace/cart_controller.dart';
+import '../../../controllers/marketplace/products_list_controller.dart';
+import '../../../../core/components/marketplace/sticky_back_bar.dart';
+
+/// Products inside one category, or everything when opened from "See all".
+///
+/// The subcategory rail re-queries `category_id` with the child's id — the
+/// parameter takes exactly one value, so a subcategory replaces its parent
+/// rather than narrowing it.
+class ProductsListPage extends GetView<ProductsListController> {
   const ProductsListPage({super.key});
+
+  static const double gutter = 20;
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ProductsListController>();
+    final palette = context.palette;
 
     return Scaffold(
-      backgroundColor: MarketplaceColors.surface,
-      appBar: MarketplaceAppBar(
-        title: controller.pageTitle.isEmpty
-            ? LocaleKeys.allProducts.tr
-            : controller.pageTitle,
-        actions: [
-          Obx(() => controller.currentFilter.value.hasActiveFilters
-              ? Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: controller.clearFilters,
-                      child: Text(
-                        LocaleKeys.clearAll.tr,
-                        style: MarketplaceTypography.cardTitle.copyWith(
-                          color: MarketplaceColors.primary,
-                        ),
+      backgroundColor: palette.background,
+      body: StickyBackBar(
+        child:  SafeArea(
+        bottom: false,
+        child: Obx(() {
+          final state = controller
+              .stateFor<List<ProductEntity>>(ProductsListController.kProducts)
+              .value;
+
+          return RefreshIndicator(
+            onRefresh: controller.refresh,
+            color: palette.brand,
+            backgroundColor: palette.surface,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (scroll) {
+                final metrics = scroll.metrics;
+                if (metrics.pixels >= metrics.maxScrollExtent - 200) {
+                  controller.loadMore();
+                }
+                return false;
+              },
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: gutter),
+                    sliver: SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const _NavRow(),
+                          const SizedBox(height: 6),
+                          if (controller.isCategoryView)
+                            Text(
+                              LocaleKeys.category.tr.toUpperCase(),
+                              style: MarketplaceTypography.labelCaps.copyWith(
+                                fontSize: 9.5,
+                                color: palette.textMuted,
+                                letterSpacing:
+                                    MarketplaceTypography.isArabic ? 0 : 1.2,
+                              ),
+                            ),
+                          Text(
+                            controller.isCategoryView
+                                ? controller.pageTitle
+                                : LocaleKeys.allProductsTitle.tr,
+                            style: MarketplaceTypography.heroDisplay.copyWith(
+                              fontSize: 26,
+                              color: palette.textPrimary,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            LocaleKeys.productsFound.trParams(
+                              {'count': '${controller.totalResults.value}'},
+                            ),
+                            style: MarketplaceTypography.rowMeta.copyWith(
+                              fontSize: 11,
+                              color: palette.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                       ),
                     ),
                   ),
-                )
-              : const SizedBox.shrink()),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: controller.refresh,
-        color: MarketplaceColors.primary,
-        child: CustomScrollView(
-          slivers: [
-
-            // ── Search Bar ────────────────────────────────
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  MarketplaceSpacing.screenPaddingH,
-                  MarketplaceSpacing.md,
-                  MarketplaceSpacing.screenPaddingH,
-                  MarketplaceSpacing.sm,
-                ),
-                child: SearchBarWidget(
-                  hintText: LocaleKeys.searchProducts.tr,
-                  onSearch: controller.onSearch,
-                  onFilter: () => _showFilterBottomSheet(context, controller),
-                ),
+                  const SliverToBoxAdapter(child: _SubcategoryRail()),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(gutter, 0, gutter, 14),
+                    sliver: SliverToBoxAdapter(
+                      child: ActiveFilterChips(
+                        filter: controller.currentFilter.value,
+                        onClearAll: controller.clearFilters,
+                        onRemoveSort: controller.removeSort,
+                        onRemovePrice: controller.removePriceRange,
+                        // The category is the screen itself here, so it is not
+                        // offered as a removable chip.
+                        onRemoveCategory: controller.clearFilters,
+                      ),
+                    ),
+                  ),
+                  ...state.when(
+                    onInitial: () => [const BrowseGridShimmer(gutter: gutter)],
+                    onLoading: () => [const BrowseGridShimmer(gutter: gutter)],
+                    onSuccess: (products, _) => products.isEmpty
+                        ? [
+                            SliverToBoxAdapter(
+                              child: BrowseNoResults(
+                                canClearFilters: controller
+                                    .currentFilter.value.hasActiveFilters,
+                                onClearFilters: controller.clearFilters,
+                                onBrowseCategories: Get.back,
+                              ),
+                            ),
+                          ]
+                        : [
+                            BrowseResultsGrid(
+                              products: products,
+                              gutter: gutter,
+                              onTapProduct: controller.openProduct,
+                              onAddToCart: (product) =>
+                                  Get.find<CartController>()
+                                      .addProduct(product, 1),
+                            ),
+                          ],
+                    onError: (message, _) => [
+                      SliverToBoxAdapter(child: _ListError(message: message)),
+                    ],
+                  ),
+                  SliverToBoxAdapter(
+                    child: controller.isLoadingMore.value
+                        ? const BrowseLoadingMore()
+                        : const SizedBox(height: 20),
+                  ),
+                ],
               ),
             ),
+          );
+        }),
+      )),
+    );
+  }
+}
 
-            // ── Active Filter Chips ───────────────────────
-            SliverToBoxAdapter(
-              child: Obx(() {
-                final filter = controller.currentFilter.value;
-                if (!filter.hasActiveFilters) return const SizedBox.shrink();
-                return _ActiveFilterChips(
-                  filter: filter,
-                  onRemoveSort: () => controller.applyFilter(
-                    filter.copyWith(sort: ProductSortOption.relevance),
+class _NavRow extends GetView<ProductsListController> {
+  const _NavRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return SizedBox(
+      height: 46,
+      child: Row(
+        children: [
+          const BackButtonSlot(),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => Get.bottomSheet(
+              ProductFilterBottomSheet(
+                initial: controller.currentFilter.value,
+                onApply: controller.applyFilter,
+              ),
+              isScrollControlled: true,
+              backgroundColor: const Color(0x00000000),
+            ),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: palette.surface,
+                borderRadius: BorderRadius.circular(MarketplaceRadius.full),
+                border: Border.all(color: palette.hairline),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.tune_rounded,
+                    size: 15,
+                    color: palette.textPrimary,
                   ),
-                  onRemovePrice: () => controller.applyFilter(
-                    filter.copyWith(clearPriceRange: true),
+                  const SizedBox(width: 7),
+                  Text(
+                    LocaleKeys.filterTitle.tr,
+                    style: MarketplaceTypography.pillLabel.copyWith(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: palette.textPrimary,
+                    ),
                   ),
-                );
-              }),
+                ],
+              ),
             ),
-
-            // ── Results count ─────────────────────────────
-            SliverToBoxAdapter(
-              child: Obx(() {
-                final state = controller.stateFor<List<ProductEntity>>(ProductsListController.kProducts);
-                return state.value.when(
-                  onInitial: () => const SizedBox.shrink(),
-                  onLoading: () => const SizedBox.shrink(),
-                  onSuccess: (data, _) {
-                    final count = (data as List).length;
-                    return Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        MarketplaceSpacing.screenPaddingH,
-                        MarketplaceSpacing.sm,
-                        MarketplaceSpacing.screenPaddingH,
-                        MarketplaceSpacing.sm,
-                      ),
-                      child: Text(
-                        LocaleKeys.productsFound.trParams({
-                          'count': '$count',
-                        }),
-                        style: MarketplaceTypography.cardSubtitle,
-                      ),
-                    );
-                  },
-                  onError: (_, __) => const SizedBox.shrink(),
-                );
-              }),
-            ),
-
-            // ── Product Grid ──────────────────────────────
-            _buildProductGrid(controller),
-
-            // ── Bottom spacing ────────────────────────────
-            const SliverToBoxAdapter(
-              child: SizedBox(height: MarketplaceSpacing.xxl),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildProductGrid(ProductsListController controller) {
+/// Single-select rail of this category's children. Absent for a leaf category
+/// and for the "see all" view — there is nothing under either.
+class _SubcategoryRail extends GetView<ProductsListController> {
+  const _SubcategoryRail();
+
+  @override
+  Widget build(BuildContext context) {
     return Obx(() {
-      final state = controller.stateFor<List<ProductEntity>>(ProductsListController.kProducts);
-      return state.value.when(
-        onInitial: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-        onLoading: () => SliverPadding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: MarketplaceSpacing.screenPaddingH,
-          ),
-          sliver: SliverGrid.count(
-            crossAxisCount: MarketplaceSpacing.productGridColumns,
-            crossAxisSpacing: MarketplaceSpacing.productGridGap,
-            mainAxisSpacing: MarketplaceSpacing.productGridGap,
-            childAspectRatio: MarketplaceSpacing.productCardWidth /
-                MarketplaceSpacing.productCardHeight,
-            children: List.generate(6, (_) => const ProductCardShimmer()),
-          ),
-        ),
-        onSuccess: (data, _) {
-          final products = data;
+      final subcategories = controller.subcategories;
+      if (subcategories.isEmpty) return const SizedBox.shrink();
 
-          if (products.isEmpty) {
-            return SliverFillRemaining(
-              child: _EmptyProductsView(
-                onClear: controller.currentFilter.value.hasActiveFilters
-                    ? controller.clearFilters
-                    : null,
-              ),
+      final selected = controller.selectedSubcategoryId.value;
+
+      return SizedBox(
+        height: 33,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsetsDirectional.only(
+            start: ProductsListPage.gutter,
+            end: ProductsListPage.gutter,
+          ),
+          itemCount: subcategories.length + 1,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, index) {
+            if (index == 0) {
+              return _RailChip(
+                label: LocaleKeys.categoryFilterAll.tr,
+                isSelected: selected == null,
+                onTap: () => controller.selectSubcategory(null),
+              );
+            }
+            final subcategory = subcategories[index - 1];
+            return _RailChip(
+              label: subcategory.name,
+              isSelected: selected == subcategory.id,
+              onTap: () => controller.selectSubcategory(subcategory.id),
             );
-          }
-
-          return SliverPadding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: MarketplaceSpacing.screenPaddingH,
-            ),
-            sliver: SliverGrid.count(
-              crossAxisCount: MarketplaceSpacing.productGridColumns,
-              crossAxisSpacing: MarketplaceSpacing.productGridGap,
-              mainAxisSpacing: MarketplaceSpacing.productGridGap,
-              childAspectRatio: MarketplaceSpacing.productCardWidth /
-                  MarketplaceSpacing.productCardHeight,
-              children: products
-                  .map((product) => ProductCard(
-                        imageUrl: product.imageUrl,
-                        name: product.name,
-                        sellerName: product.sellerName,
-                        price: product.price,
-                        rating: product.rating,
-                        originalPrice: product.originalPrice,
-                        discountPercent: product.discountPercent,
-                        onTap: () => Get.toNamed(
-                          Routes.MARKETPLACE_PRODUCT,
-                          arguments: product.id,
-                        ),
-                        onAddToCart: () {
-                          // TODO: Call CartController.addToCart(product.id)
-                        },
-                      ))
-                  .toList(),
-            ),
-          );
-        },
-        onError: (message, _) => SliverFillRemaining(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline_rounded,
-                  size: 48,
-                  color: MarketplaceColors.textSecondary,
-                ),
-                const SizedBox(height: MarketplaceSpacing.md),
-                Text(
-                  message ?? LocaleKeys.error.tr,
-                  style: MarketplaceTypography.descriptionBody,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: MarketplaceSpacing.md),
-                ElevatedButton(
-                  onPressed: controller.refresh,
-                  child: Text(LocaleKeys.retry.tr),
-                ),
-              ],
-            ),
-          ),
+          },
         ),
       );
     });
   }
-
-  void _showFilterBottomSheet(
-    BuildContext context,
-    ProductsListController controller,
-  ) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ProductFilterBottomSheet(
-        initial: controller.currentFilter.value,
-        onApply: controller.applyFilter,
-      ),
-    );
-  }
 }
 
-// ── Active Filter Chips ──────────────────────────────────
-
-class _ActiveFilterChips extends StatelessWidget {
-  const _ActiveFilterChips({
-    required this.filter,
-    required this.onRemoveSort,
-    required this.onRemovePrice,
+class _RailChip extends StatelessWidget {
+  const _RailChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
   });
 
-  final ProductFilter filter;
-  final VoidCallback onRemoveSort;
-  final VoidCallback onRemovePrice;
-
-  String _sortLabel(ProductSortOption sort) {
-    switch (sort) {
-      case ProductSortOption.priceLowHigh:
-        return LocaleKeys.sortPriceLowHigh.tr;
-      case ProductSortOption.priceHighLow:
-        return LocaleKeys.sortPriceHighLow.tr;
-      case ProductSortOption.nameAsc:
-        return LocaleKeys.sortNameAsc.tr;
-      default:
-        return '';
-    }
-  }
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 36,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(
-          horizontal: MarketplaceSpacing.screenPaddingH,
+    final palette = context.palette;
+
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 13),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: isSelected ? palette.brand : palette.surface,
+          borderRadius: BorderRadius.circular(MarketplaceRadius.full),
+          border: Border.all(
+            color: isSelected ? palette.brand : palette.hairline,
+          ),
         ),
-        children: [
-          if (filter.sort != ProductSortOption.relevance)
-            _FilterChip(
-              label: _sortLabel(filter.sort),
-              onRemove: onRemoveSort,
-            ),
-          if (filter.minPrice != null || filter.maxPrice != null)
-            _FilterChip(
-              label:
-                  '\$${filter.minPrice?.toInt() ?? 0} – \$${filter.maxPrice?.toInt() ?? '∞'}',
-              onRemove: onRemovePrice,
-            ),
-        ],
+        child: Text(
+          label,
+          style: MarketplaceTypography.pillLabel.copyWith(
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            color: isSelected ? palette.onBrand : palette.textSecondary,
+          ),
+        ),
       ),
     );
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({required this.label, required this.onRemove});
+class _ListError extends GetView<ProductsListController> {
+  const _ListError({required this.message});
 
-  final String label;
-  final VoidCallback onRemove;
+  final String message;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: MarketplaceColors.secondary,
-        borderRadius: BorderRadius.circular(MarketplaceRadius.full),
-        border: Border.all(color: MarketplaceColors.primary),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+    final palette = context.palette;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+      child: Column(
         children: [
           Text(
-            label,
-            style: MarketplaceTypography.micro.copyWith(
-              color: MarketplaceColors.primary,
-              fontWeight: FontWeight.w600,
+            message,
+            textAlign: TextAlign.center,
+            style: MarketplaceTypography.rowMeta.copyWith(
+              fontSize: 12,
+              color: palette.textSecondary,
             ),
           ),
-          const SizedBox(width: 4),
-          GestureDetector(
-            onTap: onRemove,
-            child: const Icon(
-              Icons.close_rounded,
-              size: 14,
-              color: MarketplaceColors.primary,
+          const SizedBox(height: 8),
+          TextButton(
+            onPressed: controller.loadProducts,
+            child: Text(
+              LocaleKeys.retry.tr,
+              style: MarketplaceTypography.buttonLabel.copyWith(
+                fontSize: 12.5,
+                color: palette.brand,
+              ),
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── Empty State ──────────────────────────────────────────
-
-class _EmptyProductsView extends StatelessWidget {
-  const _EmptyProductsView({this.onClear});
-  final VoidCallback? onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: MarketplaceColors.secondary.withOpacity(0.4),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.search_off_rounded,
-            size: 40,
-            color: MarketplaceColors.primary,
-          ),
-        ),
-        const SizedBox(height: MarketplaceSpacing.md),
-        Text(
-          LocaleKeys.noProducts.tr,
-          style: MarketplaceTypography.sectionHeading,
-        ),
-        const SizedBox(height: MarketplaceSpacing.sm),
-        Text(
-          LocaleKeys.noProductsMessage.tr,
-          style: MarketplaceTypography.descriptionBody,
-          textAlign: TextAlign.center,
-        ),
-        if (onClear != null) ...[
-          const SizedBox(height: MarketplaceSpacing.lg),
-          OutlinedButton(
-            onPressed: onClear,
-            child: Text(LocaleKeys.clearAll.tr),
-          ),
-        ],
-      ],
     );
   }
 }

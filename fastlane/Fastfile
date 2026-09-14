@@ -1,0 +1,209 @@
+require 'yaml'
+require 'base64'
+
+APP_IDENTIFIER = "com.hanatech.marketplace"
+
+# Which env/<name>.json the binary is compiled against. See env/README.md.
+APP_ENV = ENV.fetch("APP_ENV", "staging")
+
+def team_id
+  ENV["APPLE_TEAM_ID"] or UI.user_error!("APPLE_TEAM_ID is not set")
+end
+
+def project_root
+  File.expand_path("..", __dir__)
+end
+
+def dart_define_file
+  path = File.join(project_root, "env", "#{APP_ENV}.json")
+  UI.user_error!("No env file at env/#{APP_ENV}.json") unless File.exist?(path)
+  path
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Version name comes from pubspec.yaml (`version: 1.0.0+1` → "1.0.0").
+#
+# The build number does NOT: it comes from the GitHub run number, because both
+# TestFlight and the App Store reject a build number that has been uploaded
+# before. Tying it to the run counter means every pipeline run produces a fresh,
+# monotonically increasing build with no manual pubspec bump. Falls back to the
+# pubspec value for local runs.
+# ─────────────────────────────────────────────────────────────────────────────
+def app_version
+  pubspec = YAML.load_file(File.join(project_root, 'pubspec.yaml'))
+  name, pubspec_build = pubspec['version'].to_s.split('+')
+
+  {
+    name:   name,
+    number: (ENV["GITHUB_RUN_NUMBER"] || pubspec_build).to_i,
+  }
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# iOS — signed IPA → TestFlight
+# ─────────────────────────────────────────────────────────────────────────────
+platform :ios do
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    # Creates a temporary keychain on the runner. Without it match has nowhere
+    # to install the distribution certificate.
+    setup_ci if ENV["CI"]
+
+    # App Store Connect API key rather than an Apple ID password — no 2FA
+    # prompt, and the key is scoped to this app.
+    api_key = app_store_connect_api_key(
+      key_id:                ENV["ASC_KEY_ID"],
+      issuer_id:             ENV["ASC_ISSUER_ID"],
+      key_content:           ENV["ASC_KEY_CONTENT"],
+      is_key_content_base64: true,
+    )
+
+    # Distribution certificate + provisioning profile out of the certs repo.
+    # MATCH_PASSWORD is read from the environment by match for decryption.
+    match(
+      type:                    "appstore",
+      app_identifier:          [APP_IDENTIFIER],
+      git_url:                 ENV["MATCH_GIT_URL"],
+      git_basic_authorization: Base64.strict_encode64("x-access-token:#{ENV['MATCH_GIT_TOKEN']}"),
+      readonly:                true,
+      api_key:                 api_key,
+    )
+
+    # Referencing the profile by UUID is more reliable in CI than by name —
+    # Xcode frequently fails to resolve "match AppStore <bundle id>".
+    profile_uuid = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING][APP_IDENTIFIER]
+    UI.message("🔐 Profile UUID: #{profile_uuid}")
+
+    # The checked-in project uses automatic signing, which fights match on a
+    # runner that has no Apple ID logged in. Switch to manual for the build.
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path:                  "ios/Runner.xcodeproj",
+      team_id:               team_id,
+      code_sign_identity:    "iPhone Distribution",
+      profile_name:          "match AppStore #{APP_IDENTIFIER}",
+      profile_uuid:          profile_uuid,
+      bundle_identifier:     APP_IDENTIFIER,
+      targets:               ["Runner"],
+    )
+
+    export_plist_path = "/tmp/amazonat_export_options.plist"
+    File.write(export_plist_path, <<~XML)
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+          <key>method</key>
+          <string>app-store</string>
+          <key>teamID</key>
+          <string>#{team_id}</string>
+          <key>signingStyle</key>
+          <string>manual</string>
+          <key>signingCertificate</key>
+          <string>iPhone Distribution</string>
+          <key>provisioningProfiles</key>
+          <dict>
+              <key>#{APP_IDENTIFIER}</key>
+              <string>#{profile_uuid}</string>
+          </dict>
+          <key>uploadSymbols</key>
+          <true/>
+          <key>stripSwiftSymbols</key>
+          <true/>
+      </dict>
+      </plist>
+    XML
+
+    version = app_version
+    UI.message("📦 #{version[:name]} (#{version[:number]}) — env: #{APP_ENV}")
+
+    increment_build_number(
+      build_number: version[:number],
+      xcodeproj:    "ios/Runner.xcodeproj",
+    )
+    increment_version_number(
+      version_number: version[:name],
+      xcodeproj:      "ios/Runner.xcodeproj",
+    )
+
+    # WHY `env -u` and not a plain sh():
+    #   This lane runs under `bundle exec`, so RUBYOPT=-rbundler/setup and
+    #   GEM_HOME/GEM_PATH restrict gem lookup to the bundle. `flutter build ipa`
+    #   spawns `pod` to validate CocoaPods; `pod` is a Ruby script and inherits
+    #   those variables, then cannot find the cocoapods gem → "CocoaPods
+    #   broken". Unsetting them for this one subprocess restores normal lookup.
+    #   flutter itself is a Dart binary and is unaffected.
+    #
+    # WHY `flutter build ipa` and not gym/build_app:
+    #   gym drives xcodebuild without Flutter's xcargs (FLUTTER_ROOT,
+    #   FLUTTER_BUILD_MODE, …). Xcode 26 changed how xcconfig variables reach
+    #   build-phase scripts during archive, so the Thin Binary phase gets an
+    #   empty FLUTTER_ROOT and bails → ARCHIVE FAILED.
+    sh(
+      "env -u RUBYOPT -u GEM_HOME -u GEM_PATH -u BUNDLE_GEMFILE -u BUNDLE_PATH -u BUNDLE_BIN_PATH " \
+      "bash -c 'cd #{project_root} && flutter build ipa --release " \
+      "--no-pub " \
+      "--dart-define-from-file=#{dart_define_file} " \
+      "--build-name=#{version[:name]} " \
+      "--build-number=#{version[:number]} " \
+      "--export-options-plist=#{export_plist_path}'",
+    )
+
+    ipa_path = Dir.glob("#{project_root}/build/ios/ipa/*.ipa").first
+    UI.user_error!("No IPA under build/ios/ipa — see the Flutter build log above") unless ipa_path
+    UI.message("📱 Uploading #{ipa_path}")
+
+    upload_to_testflight(
+      api_key:                           api_key,
+      ipa:                               ipa_path,
+      skip_waiting_for_build_processing: true,
+      distribute_external:               false,
+    )
+  end
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Android — signed APK → Firebase App Distribution
+# ─────────────────────────────────────────────────────────────────────────────
+platform :android do
+  desc "Build and upload to Firebase App Distribution"
+  lane :beta do
+    version = app_version
+    UI.message("📦 #{version[:name]} (#{version[:number]}) — env: #{APP_ENV}")
+
+    # Without this the Gradle release buildType silently falls back to the debug
+    # keystore, and testers get an APK that cannot be upgraded in place later.
+    unless File.exist?(File.join(project_root, "android", "key.properties"))
+      UI.user_error!("android/key.properties is missing — the release APK would be debug-signed")
+    end
+
+    # arm64 covers every device from roughly 2015 on; armeabi-v7a is kept for
+    # the older handsets still common in the Libyan market. x86_64 is emulator
+    # only and not worth the compile time.
+    sh(
+      "cd #{project_root} && flutter build apk --release " \
+      "--target-platform android-arm,android-arm64 " \
+      "--dart-define-from-file=#{dart_define_file} " \
+      "--build-name=#{version[:name]} " \
+      "--build-number=#{version[:number]}",
+    )
+
+    apk_path = Dir.glob("#{project_root}/build/app/outputs/**/*.apk").first
+    UI.user_error!("No APK under build/app/outputs — see the Flutter build log above") unless apk_path
+    UI.message("📱 Uploading #{apk_path}")
+
+    # FIREBASE_SERVICE_ACCOUNT is base64 in GitHub Secrets; the plugin wants raw
+    # JSON.
+    firebase_app_distribution(
+      app:                           ENV.fetch("FIREBASE_APP_ID_ANDROID"),
+      service_credentials_json_data: Base64.decode64(ENV.fetch("FIREBASE_SERVICE_ACCOUNT")),
+      android_artifact_type:         "APK",
+      android_artifact_path:         apk_path,
+      groups:                        ENV.fetch("FIREBASE_TESTER_GROUPS", "testers"),
+      # Subject line of the commit that triggered the run — enough for a tester
+      # to match a build to a change.
+      release_notes:                 "v#{version[:name]} (#{version[:number]}) · #{APP_ENV} — " \
+                                     "#{last_git_commit[:message].to_s.lines.first.to_s.strip}",
+    )
+  end
+end

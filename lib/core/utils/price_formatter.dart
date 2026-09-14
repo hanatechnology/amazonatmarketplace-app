@@ -36,6 +36,25 @@ abstract class PriceFormatter {
     return format(parsed, currency: currency);
   }
 
+  /// The number alone, grouped — for layouts that set the currency in its own
+  /// typographic style beside it (see the home rail card).
+  static String amount(num value) => _group(value);
+
+  /// `1,234.50 LYD` — number first, unit trailing. The redesigned order
+  /// screens lead with the figure; [format] keeps the code-first form used by
+  /// the older screens.
+  static String formatWithUnit(num value, {String? currency}) =>
+      '${_group(value)} ${unit(currency: currency)}';
+
+  /// The currency token shown beside [amount]: the dinar symbol in Arabic,
+  /// the ISO code otherwise.
+  static String unit({String? currency}) {
+    final code = (currency ?? defaultCurrency).toUpperCase();
+    final isArabic = Get.locale?.languageCode == 'ar';
+    if (isArabic && code == defaultCurrency) return _arabicDinarSymbol;
+    return code;
+  }
+
   /// `1234.5` → `1,234.50`
   static String _group(num amount) {
     final fixed = amount.abs().toStringAsFixed(2);

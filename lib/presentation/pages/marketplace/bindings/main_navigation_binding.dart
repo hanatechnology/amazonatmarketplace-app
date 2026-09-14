@@ -1,5 +1,7 @@
 import 'package:get/get.dart';
+import 'package:marketplace/domain/usecases/marketplace/address/get_addresses_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/product/get_categories_use_case.dart';
+import 'package:marketplace/domain/usecases/marketplace/product/get_category_tree_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/get_local_cart_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/add_to_local_cart_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/remove_from_local_cart_use_case.dart';
@@ -10,11 +12,11 @@ import 'package:marketplace/domain/usecases/marketplace/cart/clear_local_cart_us
 import 'package:marketplace/presentation/controllers/marketplace/cart_controller.dart';
 import 'package:marketplace/presentation/controllers/marketplace/category_controller.dart';
 import 'package:marketplace/presentation/controllers/marketplace/home_controller.dart';
-import 'package:marketplace/presentation/pages/marketplace/home/bindings/home_binding.dart';
 import '../../../../presentation/controllers/marketplace/main_navigation_controller.dart';
 import '../../../../data/repositories/product_repository.dart';
 import '../../../../data/repositories/seller_repository.dart';
 import '../../../../data/repositories/marketplace_order_repository.dart';
+import '../../../../data/repositories/address_repository.dart';
 import '../../../../data/services/api_service.dart';
 import '../../../../domain/usecases/marketplace/product/get_products_use_case.dart';
 import '../../../../domain/usecases/marketplace/product/get_products_page_use_case.dart';
@@ -53,10 +55,19 @@ class MainNavigationBinding extends Bindings {
     Get.lazyPut(() => GetSellersUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetOrdersUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetCategoriesUseCase(Get.find()), fenix: true);
+    // The Categories tab needs `children`, which only the tree endpoint returns.
+    Get.lazyPut(() => GetCategoryTreeUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetBannersUseCase(Get.find()), fenix: true);
 
     // Unread badge on the home header — count only, never the full list.
     Get.lazyPut(() => GetUnreadCountUseCase(Get.find()), fenix: true);
+
+    // The account tab counts saved addresses, so the repository has to exist
+    // before the address book itself is opened.
+    if (!Get.isRegistered<AddressRepository>()) {
+      Get.lazyPut(() => AddressRepository(Get.find<ApiService>()), fenix: true);
+    }
+    Get.lazyPut(() => GetAddressesUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => NotificationBadgeController(), fenix: true);
 
     // Local cart use cases (LocalCartRepository is permanent from InitialBinding)
