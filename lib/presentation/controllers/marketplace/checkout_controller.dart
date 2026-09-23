@@ -17,6 +17,7 @@ import 'package:marketplace/domain/usecases/marketplace/cart/get_shipping_fee_us
 import 'cart_controller.dart';
 import 'edfali_confirm_controller.dart';
 import 'payment_webview_controller.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 class CheckoutController extends GetxController {
   // ── Dependencies ──────────────────────────────────────────
@@ -25,18 +26,18 @@ class CheckoutController extends GetxController {
 
   // ── State ─────────────────────────────────────────────────
   late final CheckoutArgs checkoutArgs;
-  final addresses          = <CheckoutAddressDto>[].obs;
-  final selectedAddressId  = Rx<String?>(null);
-  final selectedPayment    = Rx<PaymentMethod?>(null);
-  final paymentMethods     = <PaymentMethod>[].obs;
-  final shippingFee        = Rx<ShippingFeeEntity?>(null);
-  final edfaliMobile       = TextEditingController();
-  final edfaliMobileError  = RxnString();
-  final isLoadingMethods   = false.obs;
-  final isLoadingShipping  = false.obs;
+  final addresses = <CheckoutAddressDto>[].obs;
+  final selectedAddressId = Rx<String?>(null);
+  final selectedPayment = Rx<PaymentMethod?>(null);
+  final paymentMethods = <PaymentMethod>[].obs;
+  final shippingFee = Rx<ShippingFeeEntity?>(null);
+  final edfaliMobile = TextEditingController();
+  final edfaliMobileError = RxnString();
+  final isLoadingMethods = false.obs;
+  final isLoadingShipping = false.obs;
   final isLoadingAddresses = false.obs;
-  final isCheckingOut      = false.obs;
-  final isSummaryExpanded  = false.obs;
+  final isCheckingOut = false.obs;
+  final isSummaryExpanded = false.obs;
 
   /// Set when the shipping preview is rejected for this vendor/address pair.
   /// `GET /orders/shipping-fee` answers 400 "This vendor does not ship to
@@ -44,8 +45,8 @@ class CheckoutController extends GetxController {
   /// an address, and checkout would otherwise fail at submit with the same
   /// error after the customer had filled everything in.
   final deliveryUnavailable = false.obs;
-  final addressError       = false.obs;
-  final paymentError       = false.obs;
+  final addressError = false.obs;
+  final paymentError = false.obs;
 
   // ── Computed ──────────────────────────────────────────────
   bool get canPlaceOrder =>
@@ -62,9 +63,9 @@ class CheckoutController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _checkoutUseCase     = Get.find<CheckoutUseCase>();
+    _checkoutUseCase = Get.find<CheckoutUseCase>();
     _getAddressesUseCase = Get.find<GetAddressesUseCase>();
-    checkoutArgs         = Get.arguments as CheckoutArgs;
+    checkoutArgs = Get.arguments as CheckoutArgs;
     _loadAddresses();
     _loadPaymentMethods();
   }
@@ -137,7 +138,7 @@ class CheckoutController extends GetxController {
   /// If the user picks an address it is inserted (if new) and auto-selected.
   /// If they navigated away without picking, the list is refreshed.
   void navigateToAddAddress() {
-    Get.toNamed(
+    AppRouter.toNamed(
       Routes.MARKETPLACE_ADDRESSES,
       arguments: {'pickMode': true},
     )?.then((result) {
@@ -182,8 +183,7 @@ class CheckoutController extends GetxController {
           .toList(),
       addressId: selectedAddressId.value!,
       paymentMethod: _wireValue(selectedPayment.value!),
-      edfaliMobile:
-          requiresEdfaliMobile ? edfaliMobile.text.trim() : null,
+      edfaliMobile: requiresEdfaliMobile ? edfaliMobile.text.trim() : null,
     );
 
     final result = await _checkoutUseCase(request);
@@ -207,7 +207,7 @@ class CheckoutController extends GetxController {
         // Exactly one route applies: Edfali collects an SMS PIN, a hosted
         // gateway opens its checkout page, cash on delivery is already done.
         if (paymentInit != null && paymentInit.requiresOtp) {
-          Get.toNamed(
+          AppRouter.toNamed(
             Routes.MARKETPLACE_EDFALI_CONFIRM,
             arguments: EdfaliConfirmArgs(
               orderId: data.order.id,
@@ -286,7 +286,7 @@ class CheckoutController extends GetxController {
     PaymentInitiationEntity initiation,
     OrderSummaryEntity order,
   ) async {
-    final result = await Get.toNamed(
+    final result = await AppRouter.toNamed(
       Routes.MARKETPLACE_PAYMENT_WEBVIEW,
       arguments: PaymentWebViewArgs(
         checkoutUrl: initiation.checkoutUrl!,

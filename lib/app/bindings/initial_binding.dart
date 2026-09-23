@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/network/dio_client.dart';
 import '../../data/services/api_service.dart';
+import '../../data/services/session_service.dart';
 import '../../data/services/storage_service.dart';
 import '../../data/services/theme_service.dart';
 import '../../data/repositories/device_token_repository.dart';
@@ -23,6 +24,11 @@ class InitialBinding extends Bindings {
     // Theme preference (permanent) — read by the account screen's toggle.
     Get.put<ThemeService>(ThemeService(), permanent: true);
 
+    // Who the app is acting as: signed-in customer, guest, or undecided.
+    // Permanent because the route guards and both shells read it, and it must
+    // exist before the first route is built.
+    Get.put<SessionService>(SessionService(), permanent: true);
+
     // Register DioClient (permanent, no token yet — token is injected below
     // after reading secure storage, and again after every login/logout).
     final dioClient = DioClient();
@@ -39,6 +45,9 @@ class InitialBinding extends Bindings {
       // branch releases them without a token — that customer is logged out.
       if (token != null) {
         dioClient.updateToken(token);
+        // The guards read this, not the Dio field — a guest and a signed-in
+        // customer are told apart here and nowhere else.
+        Get.find<SessionService>().markSignedIn();
       } else {
         dioClient.finishHydration();
       }

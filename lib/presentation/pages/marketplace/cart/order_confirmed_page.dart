@@ -5,6 +5,7 @@ import '../../../../app/routes/app_routes.dart';
 import '../../../../core/components/marketplace/checkout/order_outcome_view.dart';
 import '../../../../core/localization/locale_keys.dart';
 import '../../../../domain/entities/marketplace/checkout_args.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// The order exists and this store's items have left the cart.
 ///
@@ -35,7 +36,7 @@ class OrderConfirmedPage extends StatelessWidget {
       // became a dead end.
       onPrimary: () {
         Get.offAllNamed(Routes.MARKETPLACE_MAIN);
-        Get.toNamed(Routes.MARKETPLACE_ORDERS);
+        AppRouter.toNamed(Routes.MARKETPLACE_ORDERS);
       },
       ghostLabel: LocaleKeys.continueShopping.tr,
       onGhost: () => Get.offAllNamed(Routes.MARKETPLACE_MAIN),

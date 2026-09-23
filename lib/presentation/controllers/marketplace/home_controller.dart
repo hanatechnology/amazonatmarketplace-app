@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/bases/base_state_controller.dart';
 import '../../../core/states/app_state.dart';
+import '../../../data/services/session_service.dart';
 import '../../../domain/entities/marketplace/banner_entity.dart';
 import '../../../domain/entities/marketplace/category_entity.dart';
 import '../../../domain/entities/marketplace/product_entity.dart';
@@ -13,6 +14,7 @@ import '../../../domain/usecases/marketplace/product/get_products_use_case.dart'
 import '../../../domain/usecases/marketplace/product/get_products_page_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_categories_use_case.dart';
 import '../../../domain/usecases/marketplace/seller/get_sellers_use_case.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 class HomeController extends BaseStateController<GetProductsUseCase> {
   /// Matches the API default page size for `/products`.
@@ -66,7 +68,11 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
           kCategories,
           () => Get.find<GetCategoriesUseCase>().execute(),
         ),
-        StateOperation<List<SellerEntity>>(kStores, _loadFeaturedStores),
+        // `GET /stores` is the one home call that needs a bearer. For a guest
+        // it is not attempted at all: the section would drop on its 401 anyway,
+        // so the request is pure waste and a red line in the logs.
+        if (SessionService.to.isSignedIn)
+          StateOperation<List<SellerEntity>>(kStores, _loadFeaturedStores),
       ]),
       loadProducts(),
     ]);
@@ -79,7 +85,8 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
 
     switch (banner.type) {
       case BannerType.product:
-        Get.toNamed(Routes.MARKETPLACE_PRODUCT, arguments: banner.productId);
+        AppRouter.toNamed(Routes.MARKETPLACE_PRODUCT,
+            arguments: banner.productId);
       case BannerType.imageLink:
         final uri = Uri.tryParse(banner.linkUrl!);
         if (uri == null) return;
@@ -92,7 +99,6 @@ class HomeController extends BaseStateController<GetProductsUseCase> {
   Future<void> refresh() async {
     await loadHomeData();
   }
-
 
   /// Load (or reload) the first page of products.
   Future<void> loadProducts() async {

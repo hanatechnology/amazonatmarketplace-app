@@ -18,6 +18,7 @@ import '../../../../core/utils/price_formatter.dart';
 import '../../../../domain/entities/marketplace/address_entity.dart';
 import '../../../../domain/entities/marketplace/order_entity.dart';
 import '../../../controllers/marketplace/order_details_controller.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// One order in full: progress, items, store, money, address — and a single
 /// sticky action chosen by the order's status.
@@ -393,7 +394,7 @@ class _StoreCard extends StatelessWidget {
       child: GestureDetector(
         onTap: order.vendorId.isEmpty
             ? null
-            : () => Get.toNamed(
+            : () => AppRouter.toNamed(
                   Routes.MARKETPLACE_SELLER,
                   arguments: order.vendorId,
                 ),
@@ -764,9 +765,9 @@ class _ActionBar extends GetView<OrderDetailsController> {
       case _OrderAction.cancel:
         _confirmCancel(context);
       case _OrderAction.requestRefund:
-        Get.toNamed(Routes.MARKETPLACE_REFUND_REQUEST, arguments: order);
+        AppRouter.toNamed(Routes.MARKETPLACE_REFUND_REQUEST, arguments: order);
       case _OrderAction.viewStore:
-        Get.toNamed(Routes.MARKETPLACE_SELLER, arguments: order.vendorId);
+        AppRouter.toNamed(Routes.MARKETPLACE_SELLER, arguments: order.vendorId);
     }
   }
 

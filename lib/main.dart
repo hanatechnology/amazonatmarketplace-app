@@ -11,6 +11,7 @@ import 'core/localization/app_translations.dart';
 import 'core/localization/locale_controller.dart';
 import 'app/routes/app_routes.dart';
 import 'app/routes/app_pages.dart';
+import 'app/routes/app_router.dart';
 import 'app/bindings/initial_binding.dart';
 
 void main() async {
@@ -54,6 +55,9 @@ class MarketplaceApp extends StatelessWidget {
 
       initialRoute: Routes.MARKETPLACE,
       initialBinding: InitialBinding(),
+      // Feeds AppRouter the live stack so a screen that is already open cannot
+      // be pushed a second time. GetX merges this with its own observer.
+      navigatorObservers: [AppRouteObserver.instance],
       getPages: AppPages.routes,
       defaultTransition: Transition.fade,
       smartManagement: SmartManagement.full,

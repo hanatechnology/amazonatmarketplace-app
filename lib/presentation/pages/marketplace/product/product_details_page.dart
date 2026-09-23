@@ -22,6 +22,7 @@ import '../../../../domain/entities/marketplace/product_details_entity.dart';
 import '../../../../domain/entities/marketplace/product_entity.dart';
 import '../../../controllers/marketplace/product_details_controller.dart';
 import '../../../../core/components/marketplace/sticky_back_bar.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// One product, drawn from `GET /products/{id}` and nothing else.
 ///
@@ -50,24 +51,25 @@ class ProductDetailsPage extends GetView<ProductDetailsController> {
       child: Scaffold(
         backgroundColor: palette.background,
         body: StickyBackBar(
-          tone: StickyBackTone.glass,
-          child: Obx(() {
-          final state = controller
-              .stateFor<ProductDetailsEntity>(ProductDetailsController.kProduct)
-              .value;
+            tone: StickyBackTone.glass,
+            child: Obx(() {
+              final state = controller
+                  .stateFor<ProductDetailsEntity>(
+                      ProductDetailsController.kProduct)
+                  .value;
 
-          return state.when(
-            onInitial: () => const ProductDetailsShimmer(gutter: gutter),
-            onLoading: () => const ProductDetailsShimmer(gutter: gutter),
-            onSuccess: (product, _) => _ProductBody(product: product),
-            onError: (message, _) => ProductNotFoundView(
-              isNotFound: controller.isNotFound.value,
-              message: message,
-              onBrowse: controller.browseProducts,
-              onRetry: controller.refresh,
-            ),
-          );
-        })),
+              return state.when(
+                onInitial: () => const ProductDetailsShimmer(gutter: gutter),
+                onLoading: () => const ProductDetailsShimmer(gutter: gutter),
+                onSuccess: (product, _) => _ProductBody(product: product),
+                onError: (message, _) => ProductNotFoundView(
+                  isNotFound: controller.isNotFound.value,
+                  message: message,
+                  onBrowse: controller.browseProducts,
+                  onRetry: controller.refresh,
+                ),
+              );
+            })),
         bottomNavigationBar: Obx(() {
           final product = controller.getOperationData<ProductDetailsEntity>(
             ProductDetailsController.kProduct,
@@ -116,7 +118,7 @@ class _ProductBody extends GetView<ProductDetailsController> {
                 onPageChanged: controller.onImageChanged,
                 isAvailable: product.isActive,
                 featuredLabel: _featuredLabel(product),
-                onImageTap: (index) => Get.toNamed(
+                onImageTap: (index) => AppRouter.toNamed(
                   Routes.MARKETPLACE_PRODUCT_GALLERY,
                   arguments: ProductGalleryArgs(
                     images: images,
@@ -246,8 +248,7 @@ class _TopRow extends GetView<ProductDetailsController> {
                 ),
                 decoration: BoxDecoration(
                   color: palette.surfaceSunken,
-                  borderRadius:
-                      BorderRadius.circular(MarketplaceRadius.full),
+                  borderRadius: BorderRadius.circular(MarketplaceRadius.full),
                   border: Border.all(color: palette.hairline),
                 ),
                 child: Row(
@@ -397,9 +398,8 @@ class _Description extends GetView<ProductDetailsController> {
               Text(
                 text,
                 maxLines: isExpanded ? null : 2,
-                overflow: isExpanded
-                    ? TextOverflow.visible
-                    : TextOverflow.ellipsis,
+                overflow:
+                    isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
                 style: MarketplaceTypography.rowMeta.copyWith(
                   fontSize: 11.5,
                   height: 1.72,
@@ -411,9 +411,7 @@ class _Description extends GetView<ProductDetailsController> {
                 onTap: controller.toggleDescription,
                 behavior: HitTestBehavior.opaque,
                 child: Text(
-                  isExpanded
-                      ? LocaleKeys.readLess.tr
-                      : LocaleKeys.readMore.tr,
+                  isExpanded ? LocaleKeys.readLess.tr : LocaleKeys.readMore.tr,
                   style: MarketplaceTypography.pillLabel.copyWith(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,

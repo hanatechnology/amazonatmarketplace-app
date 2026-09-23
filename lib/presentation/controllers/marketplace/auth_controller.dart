@@ -10,14 +10,16 @@ import 'package:marketplace/core/states/app_state.dart';
 import 'package:marketplace/core/utils/phone_utils.dart';
 import 'package:marketplace/data/models/marketplace/auth_user_model.dart';
 import 'package:marketplace/data/services/push_notification_service.dart';
+import 'package:marketplace/data/services/session_service.dart';
 import 'package:marketplace/data/services/storage_service.dart';
 import 'package:marketplace/domain/usecases/marketplace/auth/request_otp_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/auth/verify_otp_use_case.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/errors/error_messages.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
-const String kSendOtp   = 'send_otp';
+const String kSendOtp = 'send_otp';
 const String kVerifyOtp = 'verify_otp';
 
 /// Business error codes emitted by the auth endpoints.
@@ -46,24 +48,27 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
 
   // ── Phone Entry ────────────────────────────────────────
   final phoneController = TextEditingController();
-  final phoneFocusNode  = FocusNode();
-  final phoneError      = RxnString();
+  final phoneFocusNode = FocusNode();
+  final phoneError = RxnString();
 
   // ── Registration (revealed on `registration_required`) ─
   final firstNameController = TextEditingController();
-  final lastNameController  = TextEditingController();
-  final emailController     = TextEditingController();
-  final firstNameError      = RxnString();
-  final emailError          = RxnString();
+  final lastNameController = TextEditingController();
+  final emailController = TextEditingController();
+  final firstNameError = RxnString();
+  final emailError = RxnString();
 
   /// True once the API has told us this phone needs registering. The login form
   /// swaps to the sign-up variant instead of pushing a separate screen.
   final needsRegistration = false.obs;
 
   // ── OTP ────────────────────────────────────────────────
-  final otpControllers  = List.generate(otpLength, (_) => TextEditingController());
-  final otpFocusNodes   = List.generate(otpLength, (_) => FocusNode());
-  final otpError        = RxnString();
+  /// One field for the whole code, not one per digit — see [OtpCodeField].
+  /// Six fields mean five focus hops, and every hop drops and re-opens the iOS
+  /// keyboard.
+  final otpController = TextEditingController();
+  final otpFocusNode = FocusNode();
+  final otpError = RxnString();
   final isResendEnabled = false.obs;
   final resendCountdown = 60.obs;
   Timer? _resendTimer;
@@ -84,8 +89,7 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
       stateFor<AuthResponseModel>(kVerifyOtp).value.isLoading;
 
   // ── Typed state accessors (for richer UI bindings) ────
-  Rx<AppState<void>> get sendOtpState =>
-      stateFor<void>(kSendOtp);
+  Rx<AppState<void>> get sendOtpState => stateFor<void>(kSendOtp);
 
   Rx<AppState<AuthResponseModel>> get verifyOtpState =>
       stateFor<AuthResponseModel>(kVerifyOtp);
@@ -105,12 +109,8 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
     firstNameController.dispose();
     lastNameController.dispose();
     emailController.dispose();
-    for (final c in otpControllers) {
-      c.dispose();
-    }
-    for (final f in otpFocusNodes) {
-      f.dispose();
-    }
+    otpController.dispose();
+    otpFocusNode.dispose();
     _resendTimer?.cancel();
     super.onClose();
   }
@@ -158,7 +158,7 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
   }
 
   bool validateOtp() {
-    final otp = otpControllers.map((c) => c.text).join();
+    final otp = otpController.text;
     if (otp.length < otpLength) {
       otpError.value = LocaleKeys.invalidOtp.tr;
       return false;
@@ -205,7 +205,7 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
           // land on the phone step, not on a form that is already submitted.
           Get.offNamed(Routes.MARKETPLACE_VERIFY);
         } else {
-          Get.toNamed(Routes.MARKETPLACE_VERIFY);
+          AppRouter.toNamed(Routes.MARKETPLACE_VERIFY);
         }
       },
     );
@@ -219,7 +219,7 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
   /// Step 2 — POST auth/verify-otp.
   Future<void> verifyOtp() async {
     if (!validateOtp()) return;
-    final otp = otpControllers.map((c) => c.text).join();
+    final otp = otpController.text;
 
     await handleState<AuthResponseModel>(
       kVerifyOtp,
@@ -238,7 +238,16 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
         // The device token is bound to the caller's JWT, so it can only be sent
         // once a session exists.
         PushNotificationService.instance.registerForCurrentUser();
+        // A guard may have interrupted a journey to get here. Rebuild the shell
+        // first — the tabs have to come back with a session behind them — then
+        // push the screen the customer was actually after, the same way the web
+        // client honours `/login?redirect=…`.
+        final pending = SessionService.to.takeIntendedRoute();
+        SessionService.to.markSignedIn();
         Get.offAllNamed(Routes.MARKETPLACE_MAIN);
+        if (pending != null) {
+          AppRouter.toNamed<void>(pending.route, arguments: pending.arguments);
+        }
       },
       onError: (message, _) => otpError.value = message,
     );
@@ -249,11 +258,9 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
     }
   }
 
-  // Guest browsing and social sign-in are deliberately absent. Every content
-  // endpoint — /products, /categories, /stores, /banners — declares
-  // `clientAccessToken` and documents a 401, so there is nothing to browse
-  // without a token; and no OAuth endpoint exists in the contract at all. Both
-  // used to route to Home with no session, which produced a wall of 401s.
+  // Guest browsing lives on the welcome screen, not here — see
+  // [SessionService]. Social sign-in is deliberately absent: no OAuth endpoint
+  // exists in the contract at all.
 
   // ── Error handling ─────────────────────────────────────
 
@@ -269,7 +276,7 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
         // first_name and email, so the details are collected BEFORE the OTP —
         // a post-verification "complete your profile" step is impossible here.
         if (Get.currentRoute != Routes.MARKETPLACE_COMPLETE_DETAILS) {
-          Get.toNamed(Routes.MARKETPLACE_COMPLETE_DETAILS);
+          AppRouter.toNamed(Routes.MARKETPLACE_COMPLETE_DETAILS);
         }
         return;
 
@@ -281,7 +288,7 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
             : null;
         _startResendTimer(seconds: retryAfter ?? _defaultResendSeconds);
         if (Get.currentRoute != Routes.MARKETPLACE_VERIFY) {
-          Get.toNamed(Routes.MARKETPLACE_VERIFY);
+          AppRouter.toNamed(Routes.MARKETPLACE_VERIFY);
         }
         return;
 
@@ -395,11 +402,9 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
   }
 
   void clearOtp() {
-    for (final c in otpControllers) {
-      c.clear();
-    }
+    otpController.clear();
     otpError.value = null;
-    otpFocusNodes.first.requestFocus();
+    otpFocusNode.requestFocus();
   }
 
   /// Back to the phone step from the OTP screen, keeping whatever was typed.
@@ -411,41 +416,11 @@ class AuthController extends BaseStateController<RequestOtpUseCase> {
 
   // ── OTP Field Navigation ───────────────────────────────
 
-  void onOtpChanged(int index, String value) {
+  /// The field holds the whole code, so there is no focus to move and no
+  /// paste to spread across boxes: a full-length value — typed, pasted or
+  /// delivered by SMS autofill — submits itself.
+  void onOtpChanged(String value) {
     if (otpError.value != null) otpError.value = null;
-
-    // SMS autofill and paste deliver the whole code into a single box — spread
-    // it across the row instead of keeping only the first digit.
-    if (value.length > 1) {
-      _distributeCode(value, from: index);
-      return;
-    }
-
-    if (value.isNotEmpty && index < otpLength - 1) {
-      otpFocusNodes[index + 1].requestFocus();
-    }
-    if (value.isEmpty && index > 0) {
-      otpFocusNodes[index - 1].requestFocus();
-    }
-    if (otpControllers.every((c) => c.text.isNotEmpty)) {
-      verifyOtp();
-    }
-  }
-
-  void _distributeCode(String code, {int from = 0}) {
-    final digits = code.replaceAll(RegExp(r'\D'), '');
-
-    for (var i = from; i < otpLength; i++) {
-      final digitIndex = i - from;
-      otpControllers[i].text =
-          digitIndex < digits.length ? digits[digitIndex] : '';
-    }
-
-    final lastFilled = (from + digits.length).clamp(0, otpLength - 1);
-    otpFocusNodes[lastFilled].requestFocus();
-
-    if (otpControllers.every((c) => c.text.isNotEmpty)) {
-      verifyOtp();
-    }
+    if (value.length == otpLength) verifyOtp();
   }
 }

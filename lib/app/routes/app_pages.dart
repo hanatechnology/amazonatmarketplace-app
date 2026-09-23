@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'app_routes.dart';
+import '../middleware/auth_guard_middleware.dart';
 
 // Pages
 import '../../presentation/pages/marketplace/splash/marketplace_splash_page.dart';
@@ -48,6 +49,11 @@ import '../../presentation/pages/marketplace/notifications/notifications_page.da
 import '../../presentation/pages/marketplace/notifications/bindings/notifications_binding.dart';
 
 abstract class AppPages {
+  /// Pages carrying `AuthGuardMiddleware` are the ones whose data is
+  /// bearer-only — stores, orders, addresses, notifications, refunds and the
+  /// whole checkout chain. A guest reaching one is redirected to login and sent
+  /// back to it once the OTP lands. Everything else is open: the catalogue
+  /// endpoints answer without a token.
   static final routes = [
     GetPage(
       name: Routes.MARKETPLACE,
@@ -115,49 +121,59 @@ abstract class AppPages {
     ),
     GetPage(
       name: Routes.MARKETPLACE_SELLER,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const SellerProfilePage(),
       binding: SellerBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_CHECKOUT,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const CheckoutPage(),
       binding: CheckoutBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_ORDER_CONFIRMED,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const OrderConfirmedPage(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_PAYMENT_WEBVIEW,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const PaymentWebViewPage(),
       binding: PaymentWebViewBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_ORDER_CANCELLED,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const OrderCancelledPage(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_EDFALI_CONFIRM,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const EdfaliConfirmPage(),
       binding: EdfaliConfirmBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_ORDERS,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const MyOrdersPage(),
       binding: OrdersBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_ORDER_DETAILS,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const OrderDetailsPage(),
       binding: OrderDetailsBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_REFUND_REQUEST,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const RefundRequestPage(),
       binding: RefundRequestBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_TRANSACTION_PROOF,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const TransactionProofPage(),
       // No binding: the screen is handed one image URL and needs no controller.
       transition: Transition.fadeIn,
@@ -166,17 +182,20 @@ abstract class AppPages {
     ),
     GetPage(
       name: Routes.MARKETPLACE_NOTIFICATIONS,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const NotificationsPage(),
       binding: NotificationsBinding(),
       transition: Transition.rightToLeft,
     ),
     GetPage(
       name: Routes.MARKETPLACE_ADDRESSES,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const AddressBookPage(),
       binding: AddressesBinding(),
     ),
     GetPage(
       name: Routes.MARKETPLACE_ADD_ADDRESS,
+      middlewares: [AuthGuardMiddleware()],
       page: () => const AddAddressPage(),
       binding: AddAddressBinding(),
       transition: Transition.rightToLeft,

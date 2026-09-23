@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
+import '../../../../data/services/session_service.dart';
 import '../../../../domain/entities/marketplace/banner_entity.dart';
 import '../../../../presentation/controllers/marketplace/notification_badge_controller.dart';
 import '../../../localization/locale_keys.dart';
 import '../../../theme/marketplace_palette.dart';
 import '../../../theme/marketplace_typography.dart';
 import '../banner_card.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// Full-bleed hero at the top of Home: the banner carousel plus the app header
 /// that sits on top of it.
@@ -122,7 +124,12 @@ class HomeHero extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const _Wordmark(),
-                const _HeroBell(),
+                // Notifications are bearer-only, and the web client hides the
+                // bell for a logged-out visitor rather than showing an empty
+                // one. Same here.
+                Obx(() => SessionService.to.isSignedIn
+                    ? const _HeroBell()
+                    : const SizedBox.shrink()),
               ],
             ),
           ),
@@ -214,7 +221,7 @@ class _HeroBell extends StatelessWidget {
 
     return GestureDetector(
       onTap: () async {
-        await Get.toNamed(Routes.MARKETPLACE_NOTIFICATIONS);
+        await AppRouter.toNamed(Routes.MARKETPLACE_NOTIFICATIONS);
         await controller?.loadUnreadCount();
       },
       behavior: HitTestBehavior.opaque,

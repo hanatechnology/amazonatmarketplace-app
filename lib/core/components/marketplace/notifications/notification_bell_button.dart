@@ -6,6 +6,7 @@ import 'package:marketplace/core/theme/marketplace_radius.dart';
 import 'package:marketplace/core/theme/marketplace_spacing.dart';
 import 'package:marketplace/core/theme/marketplace_typography.dart';
 import 'package:marketplace/presentation/controllers/marketplace/notification_badge_controller.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// Header bell with an unread badge. Refreshes the count on return so the badge
 /// reflects anything read while the notifications screen was open.
@@ -18,7 +19,7 @@ class NotificationBellButton extends StatelessWidget {
 
     return InkWell(
       onTap: () async {
-        await Get.toNamed(Routes.MARKETPLACE_NOTIFICATIONS);
+        await AppRouter.toNamed(Routes.MARKETPLACE_NOTIFICATIONS);
         await controller.loadUnreadCount();
       },
       borderRadius: BorderRadius.circular(MarketplaceRadius.md),
@@ -50,8 +51,7 @@ class NotificationBellButton extends StatelessWidget {
                   constraints: const BoxConstraints(minWidth: 16),
                   decoration: BoxDecoration(
                     color: MarketplaceColors.statusClosed,
-                    borderRadius:
-                        BorderRadius.circular(MarketplaceRadius.full),
+                    borderRadius: BorderRadius.circular(MarketplaceRadius.full),
                   ),
                   child: Text(
                     count > 99 ? '99+' : '$count',

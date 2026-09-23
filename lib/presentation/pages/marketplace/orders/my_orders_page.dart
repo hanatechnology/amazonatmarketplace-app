@@ -9,6 +9,7 @@ import '../../../../core/theme/marketplace_spacing.dart';
 import '../../../../core/theme/marketplace_typography.dart';
 import '../../../../domain/entities/marketplace/order_entity.dart';
 import '../../../controllers/marketplace/orders_controller.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// Order history. Infinite scroll rather than the web's numbered pagination.
 ///
@@ -218,7 +219,7 @@ class _OrdersList extends GetView<OrdersController> {
               }
 
               final order = orders[index];
-              void openDetails() => Get.toNamed(
+              void openDetails() => AppRouter.toNamed(
                     Routes.MARKETPLACE_ORDER_DETAILS,
                     arguments: order.id,
                   );
@@ -233,7 +234,7 @@ class _OrdersList extends GetView<OrdersController> {
                 onAction: _actionLabelFor(order) == null
                     ? null
                     : order.canRequestRefund
-                        ? () => Get.toNamed(
+                        ? () => AppRouter.toNamed(
                               Routes.MARKETPLACE_REFUND_REQUEST,
                               arguments: order,
                             )

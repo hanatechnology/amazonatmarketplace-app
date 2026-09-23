@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/components/layout/keyboard_aware_bottom_bar.dart';
@@ -11,6 +10,7 @@ import '../../../../core/theme/status_tone.dart';
 import '../../../../core/utils/price_formatter.dart';
 import '../../../controllers/marketplace/edfali_confirm_controller.dart';
 import '../../../../core/components/marketplace/sticky_back_bar.dart';
+import 'package:marketplace/core/components/marketplace/auth/otp_code_field.dart';
 
 /// Step two of the Edfali flow: the 4-digit PIN the gateway sent by SMS.
 ///
@@ -176,67 +176,15 @@ class _PinRow extends GetView<EdfaliConfirmController> {
     // The row is Latin-ordered in both languages: a PIN is read left to right.
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: Row(
-        children: List.generate(
-          EdfaliConfirmController.otpLength,
-          (i) => Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: i == EdfaliConfirmController.otpLength - 1 ? 0 : 9,
-              ),
-              child: _PinBox(index: i),
-            ),
-          ),
+      child: Obx(
+        () => OtpCodeField(
+          controller: controller.otpController,
+          focusNode: controller.otpFocusNode,
+          length: EdfaliConfirmController.otpLength,
+          hasError: controller.otpError.value != null,
+          onChanged: controller.onOtpChanged,
+          gap: 9,
         ),
-      ),
-    );
-  }
-}
-
-class _PinBox extends GetView<EdfaliConfirmController> {
-  const _PinBox({required this.index});
-
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return SizedBox(
-      height: 56,
-      child: TextField(
-        controller: controller.otpControllers[index],
-        focusNode: controller.otpFocusNodes[index],
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        // No maxLength: SMS autofill delivers the whole PIN into one box, and
-        // the controller spreads it across the row.
-        autofillHints: index == 0 ? const [AutofillHints.oneTimeCode] : null,
-        style: MarketplaceTypography.rowTitle.copyWith(
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          color: palette.textPrimary,
-        ),
-        cursorColor: palette.brand,
-        inputFormatters: [
-          FilteringTextInputFormatter.digitsOnly,
-          LengthLimitingTextInputFormatter(EdfaliConfirmController.otpLength),
-        ],
-        decoration: InputDecoration(
-          counterText: '',
-          filled: true,
-          fillColor: palette.surface,
-          contentPadding: EdgeInsets.zero,
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: palette.hairline),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: palette.brand, width: 1.5),
-          ),
-        ),
-        onChanged: (value) => controller.onOtpChanged(index, value),
       ),
     );
   }

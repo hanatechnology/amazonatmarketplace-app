@@ -10,6 +10,7 @@ import 'package:marketplace/domain/usecases/marketplace/notification/get_unread_
 import 'package:marketplace/domain/usecases/marketplace/notification/mark_all_notifications_read_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/notification/mark_notification_read_use_case.dart';
 import 'notification_badge_controller.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// Read-state filter shown as chips above the list.
 enum NotificationReadFilter {
@@ -25,7 +26,8 @@ enum NotificationReadFilter {
       };
 }
 
-class NotificationsController extends BaseStateController<GetNotificationsUseCase>
+class NotificationsController
+    extends BaseStateController<GetNotificationsUseCase>
     with WidgetsBindingObserver {
   // ── Operation keys ────────────────────────────────────────
   static const String kNotifications = 'notifications';
@@ -176,15 +178,15 @@ class NotificationsController extends BaseStateController<GetNotificationsUseCas
     switch (notification.referenceType) {
       case NotificationReferenceType.order:
         if (notification.referenceId != null) {
-          Get.toNamed(
+          AppRouter.toNamed(
             Routes.MARKETPLACE_ORDER_DETAILS,
             arguments: notification.referenceId,
           );
         } else {
-          Get.toNamed(Routes.MARKETPLACE_ORDERS);
+          AppRouter.toNamed(Routes.MARKETPLACE_ORDERS);
         }
       case NotificationReferenceType.refund:
-        Get.toNamed(Routes.MARKETPLACE_ORDERS);
+        AppRouter.toNamed(Routes.MARKETPLACE_ORDERS);
       default:
         break;
     }

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/bases/base_state_controller.dart';
+import '../../../core/components/marketplace/auth/sign_in_prompt_sheet.dart';
 import '../../../domain/entities/marketplace/product_details_entity.dart';
 import '../../../domain/entities/marketplace/product_entity.dart';
 import '../../../domain/usecases/marketplace/product/get_product_details_use_case.dart';
@@ -11,6 +12,7 @@ import 'cart_controller.dart';
 import '../../../core/localization/locale_keys.dart';
 import '../../../core/theme/marketplace_spacing.dart';
 import '../../../core/theme/marketplace_radius.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 class ProductDetailsController
     extends BaseStateController<GetProductDetailsUseCase> {
@@ -142,14 +144,24 @@ class ProductDetailsController
     final product = getOperationData<ProductDetailsEntity>(kProduct);
     final vendorId = product?.vendor.id ?? '';
     if (vendorId.isEmpty) return;
-    Get.toNamed(Routes.MARKETPLACE_SELLER, arguments: vendorId);
+    // `GET /stores/{id}` is bearer-only, so a guest is asked to sign in here
+    // rather than sent to a screen that can only 401.
+    if (!AuthGuard.ensureSignedIn(
+      reasonKey: LocaleKeys.signInRequiredStores,
+      intendedRoute: Routes.MARKETPLACE_SELLER,
+      arguments: vendorId,
+    )) {
+      return;
+    }
+
+    AppRouter.toNamed(Routes.MARKETPLACE_SELLER, arguments: vendorId);
   }
 
   void openCategory() {
     final product = getOperationData<ProductDetailsEntity>(kProduct);
     final category = product?.category;
     if (category == null || category.id.isEmpty) return;
-    Get.toNamed(
+    AppRouter.toNamed(
       Routes.MARKETPLACE_PRODUCTS_LIST,
       arguments: <String, dynamic>{
         'categoryId': category.id,

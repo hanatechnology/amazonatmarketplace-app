@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/components/marketplace/auth/sign_in_required_view.dart';
 import '../../../../core/components/marketplace/sellers/seller_card.dart';
 import '../../../../core/components/marketplace/sellers/store_search_field.dart';
 import '../../../../core/localization/locale_keys.dart';
@@ -8,6 +9,7 @@ import '../../../../core/theme/marketplace_palette.dart';
 import '../../../../core/theme/marketplace_radius.dart';
 import '../../../../core/theme/marketplace_spacing.dart';
 import '../../../../core/theme/marketplace_typography.dart';
+import '../../../../data/services/session_service.dart';
 import '../../../../domain/entities/marketplace/seller_entity.dart';
 import '../../../controllers/marketplace/sellers_controller.dart';
 
@@ -15,6 +17,11 @@ import '../../../controllers/marketplace/sellers_controller.dart';
 ///
 /// No filter or sort chips: `GET /stores` sorts by creation date only, and
 /// filtering the pages already fetched would hide stores further down the list.
+///
+/// `GET /stores` is bearer-only — it answers 401 without a token, unlike the
+/// product and category endpoints — so a guest gets a sign-in wall here rather
+/// than a list. The wall is in the tab itself: a tab lives in the shell's nested
+/// navigator, which route middleware never sees.
 class SellersListPage extends GetView<SellersController> {
   const SellersListPage({super.key});
 
@@ -28,47 +35,58 @@ class SellersListPage extends GetView<SellersController> {
       backgroundColor: palette.background,
       body: SafeArea(
         bottom: false,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(_gutter, 12, _gutter, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    LocaleKeys.sellers.tr,
-                    style: MarketplaceTypography.heroDisplay.copyWith(
-                      fontSize: 30,
-                      color: palette.textPrimary,
+        child: Obx(() {
+          if (!SessionService.to.isSignedIn) {
+            return const SignInRequiredView(
+              titleKey: LocaleKeys.signInRequiredStoresTitle,
+              bodyKey: LocaleKeys.signInRequiredStores,
+              icon: Icons.storefront_outlined,
+            );
+          }
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(_gutter, 12, _gutter, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      LocaleKeys.sellers.tr,
+                      style: MarketplaceTypography.heroDisplay.copyWith(
+                        fontSize: 30,
+                        color: palette.textPrimary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    LocaleKeys.sellersSubtitle.tr,
-                    style: MarketplaceTypography.rowMeta.copyWith(
-                      fontSize: 11.5,
-                      color: palette.textSecondary,
+                    const SizedBox(height: 4),
+                    Text(
+                      LocaleKeys.sellersSubtitle.tr,
+                      style: MarketplaceTypography.rowMeta.copyWith(
+                        fontSize: 11.5,
+                        color: palette.textSecondary,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  StoreSearchField(onSearch: controller.onSearch),
-                ],
+                    const SizedBox(height: 14),
+                    StoreSearchField(onSearch: controller.onSearch),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: Obx(() {
-                final state = controller.stateFor<List<SellerEntity>>(kSellers);
-                return state.value.when(
-                  onInitial: () => const _SellersLoading(),
-                  onLoading: () => const _SellersLoading(),
-                  onSuccess: (sellers, _) => _SellersList(sellers: sellers),
-                  onError: (message, _) => _SellersError(message: message),
-                );
-              }),
-            ),
-          ],
-        ),
+              Expanded(
+                child: Obx(() {
+                  final state =
+                      controller.stateFor<List<SellerEntity>>(kSellers);
+                  return state.value.when(
+                    onInitial: () => const _SellersLoading(),
+                    onLoading: () => const _SellersLoading(),
+                    onSuccess: (sellers, _) => _SellersList(sellers: sellers),
+                    onError: (message, _) => _SellersError(message: message),
+                  );
+                }),
+              ),
+            ],
+          );
+        }),
       ),
     );
   }

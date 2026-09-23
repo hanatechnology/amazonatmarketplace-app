@@ -10,14 +10,17 @@ import '../../../../core/theme/marketplace_palette.dart';
 import '../../../../core/theme/marketplace_radius.dart';
 import '../../../../core/theme/marketplace_typography.dart';
 import '../../../../data/services/push_notification_service.dart';
+import '../../../../data/services/session_service.dart';
 import '../../../../data/services/storage_service.dart';
 
 /// A router with a face, not a screen the customer acts on.
 ///
-/// A stored JWT is good for seven days, so it goes straight to Home. Otherwise
-/// first launch gets onboarding once, ever, and every launch after that lands
-/// on Welcome. The rail is determinate because the wait is a token read, not a
-/// network call — a spinner would imply otherwise.
+/// A stored JWT is good for seven days, so it goes straight to Home. A customer
+/// who chose to browse without an account goes there too — that choice is
+/// persisted, so it is asked once, not every launch. Otherwise first launch gets
+/// onboarding once, ever, and every launch after that lands on Welcome. The rail
+/// is determinate because the wait is a token read, not a network call — a
+/// spinner would imply otherwise.
 ///
 /// The mark carries the screen: the knight is drawn in fine circuit traces, and
 /// [_CircuitFieldPainter] continues those traces out past it. No photography —
@@ -50,11 +53,19 @@ class _MarketplaceSplashPageState extends State<MarketplaceSplashPage> {
 
     if (token != null && token.isNotEmpty) {
       Get.find<DioClient>().updateToken(token);
+      SessionService.to.markSignedIn();
       // Restored session: re-send the token, which may have rotated while the
       // app was closed, and route any notification the app was launched from.
       PushNotificationService.instance.registerForCurrentUser();
       Get.offAllNamed(Routes.MARKETPLACE_MAIN);
       PushNotificationService.instance.handleLaunchMessage();
+      return;
+    }
+
+    // No token, but the welcome screen was already answered with "browse as a
+    // guest" — the catalogue is open, so there is nothing to ask again.
+    if (SessionService.to.isGuest) {
+      Get.offAllNamed(Routes.MARKETPLACE_MAIN);
       return;
     }
 
@@ -72,9 +83,8 @@ class _MarketplaceSplashPageState extends State<MarketplaceSplashPage> {
     // The whole composition is drawn against the 390pt board it was designed
     // on, then scaled — the trace field and the mark must keep their ratio to
     // each other, not to the device.
-    final scale =
-        (MediaQuery.sizeOf(context).width / _SplashMetrics.boardWidth)
-            .clamp(0.82, 1.18);
+    final scale = (MediaQuery.sizeOf(context).width / _SplashMetrics.boardWidth)
+        .clamp(0.82, 1.18);
 
     return Scaffold(
       backgroundColor: palette.background,
@@ -147,8 +157,7 @@ class _MarketplaceSplashPageState extends State<MarketplaceSplashPage> {
                     LocaleKeys.madeInLibya.tr.toUpperCase(),
                     style: MarketplaceTypography.labelCaps.copyWith(
                       color: palette.textMuted,
-                      letterSpacing:
-                          MarketplaceTypography.isArabic ? 0 : 1.5,
+                      letterSpacing: MarketplaceTypography.isArabic ? 0 : 1.5,
                     ),
                   ),
                 ],
@@ -322,9 +331,15 @@ class _CircuitFieldPainter extends CustomPainter {
     // points stepped around the circumference.
     const center = Offset(195, 195);
     _drawDottedRing(canvas, center, 150, 9, 0.55, trace);
-    _drawDottedRing(canvas, center, 182, 14, 0.5, trace.withValues(
-      alpha: trace.a * 0.65,
-    ));
+    _drawDottedRing(
+        canvas,
+        center,
+        182,
+        14,
+        0.5,
+        trace.withValues(
+          alpha: trace.a * 0.65,
+        ));
 
     final nodePaint = Paint()..color = node;
     for (final point in _majorNodes) {
@@ -351,8 +366,7 @@ class _CircuitFieldPainter extends CustomPainter {
     for (var i = 0; i < count; i++) {
       final angle = i * step;
       canvas.drawCircle(
-        center +
-            Offset(math.cos(angle) * radius, math.sin(angle) * radius),
+        center + Offset(math.cos(angle) * radius, math.sin(angle) * radius),
         dotRadius,
         paint,
       );

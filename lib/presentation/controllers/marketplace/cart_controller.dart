@@ -10,6 +10,9 @@ import 'package:marketplace/domain/usecases/marketplace/cart/update_local_cart_q
 import 'package:marketplace/domain/usecases/marketplace/cart/clear_local_cart_use_case.dart';
 import 'package:marketplace/presentation/controllers/marketplace/main_navigation_controller.dart';
 import 'package:marketplace/app/routes/app_routes.dart';
+import 'package:marketplace/core/components/marketplace/auth/sign_in_prompt_sheet.dart';
+import 'package:marketplace/core/localization/locale_keys.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 class CartController extends GetxController {
   // ── Dependencies injected in onInit ───────────────────────
@@ -107,7 +110,32 @@ class CartController extends GetxController {
       discount: group.savings,
     );
 
-    Get.toNamed(Routes.MARKETPLACE_CHECKOUT, arguments: args);
+    // Checkout is where a guest has to become a customer: shipping fee,
+    // payment methods and `POST /orders/checkout` are all bearer-only. The
+    // basket rides along with the guard, so signing in lands on this vendor's
+    // checkout rather than back on an empty cart.
+    if (!AuthGuard.ensureSignedIn(
+      reasonKey: LocaleKeys.signInRequiredCheckout,
+      intendedRoute: Routes.MARKETPLACE_CHECKOUT,
+      arguments: args,
+    )) {
+      return;
+    }
+
+    AppRouter.toNamed(Routes.MARKETPLACE_CHECKOUT, arguments: args);
+  }
+
+  /// Opens a store profile from a cart group, once there is a session for it.
+  void openStore(String vendorId) {
+    if (vendorId.isEmpty) return;
+    if (!AuthGuard.ensureSignedIn(
+      reasonKey: LocaleKeys.signInRequiredStores,
+      intendedRoute: Routes.MARKETPLACE_SELLER,
+      arguments: vendorId,
+    )) {
+      return;
+    }
+    AppRouter.toNamed(Routes.MARKETPLACE_SELLER, arguments: vendorId);
   }
 
   /// Empties one store's items after its order is placed. The web calls this

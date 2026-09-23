@@ -6,6 +6,7 @@ import 'package:marketplace/domain/entities/marketplace/product_entity.dart';
 import 'package:marketplace/domain/entities/marketplace/seller_entity.dart';
 import 'package:marketplace/domain/usecases/marketplace/seller/get_seller_details_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/seller/get_seller_products_use_case.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 const String kSellerProfile = 'sellerProfile';
 const String kSellerProducts = 'sellerProducts';
@@ -92,5 +93,5 @@ class SellerProfileController
   SellerEntity? get seller => getOperationData<SellerEntity>(kSellerProfile);
 
   void openProduct(ProductEntity product) =>
-      Get.toNamed(Routes.MARKETPLACE_PRODUCT, arguments: product.id);
+      AppRouter.toNamed(Routes.MARKETPLACE_PRODUCT, arguments: product.id);
 }

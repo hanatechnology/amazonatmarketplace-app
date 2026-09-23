@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../../app/routes/app_routes.dart';
 import '../../../../core/components/marketplace/cart/cart_vendor_group_card.dart';
 import '../../../../core/components/marketplace/empty_cart_view.dart';
 import '../../../../core/localization/locale_keys.dart';
@@ -57,10 +56,11 @@ class CartPage extends GetView<CartController> {
                     return CartVendorGroupCard(
                       group: group,
                       onCheckout: () => controller.checkoutGroup(group),
-                      onOpenStore: () => Get.toNamed(
-                        Routes.MARKETPLACE_SELLER,
-                        arguments: group.vendorId,
-                      ),
+                      // The store profile is bearer-only. Guarding here rather
+                      // than letting the route middleware catch it keeps the
+                      // vendor id, so signing in opens the store the customer
+                      // tapped.
+                      onOpenStore: () => controller.openStore(group.vendorId),
                       onQuantityChanged: (item, quantity) =>
                           controller.updateQuantity(item.productId, quantity),
                       onRemove: (item) => controller.removeItem(item.productId),

@@ -46,9 +46,10 @@ class EdfaliConfirmController
 
   late EdfaliConfirmArgs args;
 
-  final otpControllers =
-      List.generate(otpLength, (_) => TextEditingController());
-  final otpFocusNodes = List.generate(otpLength, (_) => FocusNode());
+  /// One field for the whole PIN — see [OtpCodeField]. Per-digit fields hop
+  /// focus, and each hop tears down and re-opens the iOS keyboard.
+  final otpController = TextEditingController();
+  final otpFocusNode = FocusNode();
 
   final otpError = RxnString();
   final attemptsRemaining = RxnInt();
@@ -118,16 +119,12 @@ class EdfaliConfirmController
   @override
   void onClose() {
     _ticker?.cancel();
-    for (final controller in otpControllers) {
-      controller.dispose();
-    }
-    for (final node in otpFocusNodes) {
-      node.dispose();
-    }
+    otpController.dispose();
+    otpFocusNode.dispose();
     super.onClose();
   }
 
-  String get code => otpControllers.map((c) => c.text).join();
+  String get code => otpController.text;
 
   bool get isConfirming => getState<PaymentStatus>(kConfirmEdfali).isLoading;
 
@@ -147,41 +144,16 @@ class EdfaliConfirmController
     );
   }
 
-  void onOtpChanged(int index, String value) {
+  /// One field holds the whole PIN, so a full-length value — typed, pasted or
+  /// delivered by SMS autofill — submits itself.
+  void onOtpChanged(String value) {
     if (otpError.value != null) otpError.value = null;
-
-    if (value.length > 1) {
-      _distributeCode(value, from: index);
-      return;
-    }
-    if (value.isNotEmpty && index < otpLength - 1) {
-      otpFocusNodes[index + 1].requestFocus();
-    }
-    if (value.isEmpty && index > 0) {
-      otpFocusNodes[index - 1].requestFocus();
-    }
-    if (otpControllers.every((c) => c.text.isNotEmpty)) confirm();
-  }
-
-  /// SMS autofill and paste deliver the whole PIN into a single box — spread it
-  /// across the row instead of keeping only the first digit.
-  void _distributeCode(String value, {int from = 0}) {
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    for (var i = from; i < otpLength; i++) {
-      final digitIndex = i - from;
-      otpControllers[i].text =
-          digitIndex < digits.length ? digits[digitIndex] : '';
-    }
-    final lastFilled = (from + digits.length).clamp(0, otpLength - 1);
-    otpFocusNodes[lastFilled].requestFocus();
-    if (otpControllers.every((c) => c.text.isNotEmpty)) confirm();
+    if (value.length == otpLength) confirm();
   }
 
   void clearOtp() {
-    for (final controller in otpControllers) {
-      controller.clear();
-    }
-    otpFocusNodes.first.requestFocus();
+    otpController.clear();
+    otpFocusNode.requestFocus();
   }
 
   Future<void> confirm() async {

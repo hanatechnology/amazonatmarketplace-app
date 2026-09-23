@@ -5,6 +5,7 @@ import 'package:marketplace/core/states/app_state.dart';
 import 'package:marketplace/domain/entities/marketplace/seller_entity.dart';
 import 'package:marketplace/domain/usecases/base_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/seller/get_sellers_use_case.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 const String kSellers = 'sellers';
 
@@ -76,5 +77,5 @@ class SellersController extends BaseStateController<GetSellersUseCase> {
   }
 
   void openSeller(SellerEntity seller) =>
-      Get.toNamed(Routes.MARKETPLACE_SELLER, arguments: seller.id);
+      AppRouter.toNamed(Routes.MARKETPLACE_SELLER, arguments: seller.id);
 }

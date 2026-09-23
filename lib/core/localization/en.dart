@@ -39,17 +39,18 @@ const Map<String, String> en = {
   'resend_in': 'Resend in @seconds s',
   'didnt_receive_code': "Didn't receive the code?",
   'edit_phone': 'Change phone number',
-  'otp_rate_limited': 'Too many codes requested for this number. Try again later.',
+  'otp_rate_limited':
+      'Too many codes requested for this number. Try again later.',
   'otp_too_many_attempts': 'Too many incorrect attempts. Request a new code.',
 
   // ── Registration ────────────────────────────────────────
-  'no_account_found':   'No account found',
-  'sign_up_prompt':     'Add a few details to create your account.',
-  'sign_up':            'Sign up',
-  'first_name_label':   'First name',
-  'first_name_hint':    'Sara',
-  'last_name_label':    'Last name',
-  'last_name_hint':     'Mohamed',
+  'no_account_found': 'No account found',
+  'sign_up_prompt': 'Add a few details to create your account.',
+  'sign_up': 'Sign up',
+  'first_name_label': 'First name',
+  'first_name_hint': 'Sara',
+  'last_name_label': 'Last name',
+  'last_name_hint': 'Mohamed',
   'last_name_optional': 'Last name (optional)',
 
   // ── Complete Details ────────────────────────────────────
@@ -120,9 +121,11 @@ const Map<String, String> en = {
   'select_address': 'Please select a delivery address',
   'select_payment': 'Please select a payment method',
   'payment_cancelled': 'Payment not completed',
-  'payment_cancelled_message': 'The payment was cancelled and nothing was charged. Your items are still in the cart.',
+  'payment_cancelled_message':
+      'The payment was cancelled and nothing was charged. Your items are still in the cart.',
   'order_confirmed': 'Order received',
-  'order_confirmed_message': 'Thank you. The store is preparing your order, and you will be notified at every status change.',
+  'order_confirmed_message':
+      'Thank you. The store is preparing your order, and you will be notified at every status change.',
   'order_on_its_way': 'Your order is on its way.',
   'track_my_order': 'Track My Order',
   'continue_shopping': 'Continue Shopping',
@@ -184,7 +187,7 @@ const Map<String, String> en = {
   // ── Account / Profile ───────────────────────────────────
   'my_account': 'My Account',
   'profile': 'Profile',
-  'address_book':       'Address Book',
+  'address_book': 'Address Book',
   'pick_address_title': 'Select Delivery Address',
   'delivery_areas': 'Delivery Areas',
   'help_center': 'Help Center',
@@ -207,7 +210,8 @@ const Map<String, String> en = {
   'payout_method': 'Payout method',
   'submit_refund': 'Submit request',
   'refund_requested': 'Refund requested',
-  'refund_requested_message': 'We will review your request and arrange a pickup.',
+  'refund_requested_message':
+      'We will review your request and arrange a pickup.',
   'field_required': 'This field is required',
   'field_invalid': 'Please check this value',
   'refund_tracker': 'Refunds',
@@ -216,15 +220,21 @@ const Map<String, String> en = {
   'refund_tracking': 'Refund tracking',
   'refund_track': 'Track',
   'refund_next': 'Next',
-  'refund_next_pending': 'The store has your request and will review it shortly.',
-  'refund_next_under_review': 'The store is reviewing your request and the items you returned.',
-  'refund_next_under_processing': 'We will collect the items at the scheduled time, then release the payout.',
-  'refund_next_awaiting_payout': 'The amount is on its way to your payout method.',
+  'refund_next_pending':
+      'The store has your request and will review it shortly.',
+  'refund_next_under_review':
+      'The store is reviewing your request and the items you returned.',
+  'refund_next_under_processing':
+      'We will collect the items at the scheduled time, then release the payout.',
+  'refund_next_awaiting_payout':
+      'The amount is on its way to your payout method.',
   'refund_net_amount': 'Net amount paid out',
   'refund_eligible_lead': 'Something wrong?',
   'refund_eligible_title': 'You can request a refund for this order',
-  'refund_eligible_collect': 'We collect the items. You pick a pickup date and address.',
-  'refund_eligible_money': 'Then the money moves. To the payout method you choose, less the transport cost.',
+  'refund_eligible_collect':
+      'We collect the items. You pick a pickup date and address.',
+  'refund_eligible_money':
+      'Then the money moves. To the payout method you choose, less the transport cost.',
   'refund_amount': 'Amount',
   'refund_requested_at': 'Requested',
   'refund_requested_short': 'Requested',
@@ -260,9 +270,11 @@ const Map<String, String> en = {
   'edfali_session_expired': 'The payment session expired. Please order again.',
   'edfali_payment_failed': 'The payment failed. Please try another method.',
   'payment_under_review': 'Payment under review',
-  'payment_under_review_message': 'We are confirming this payment with the provider. No action is needed.',
+  'payment_under_review_message':
+      'We are confirming this payment with the provider. No action is needed.',
   'confirm_payment': 'Confirm payment',
-  'single_seller_checkout': 'Select items from one seller at a time to check out.',
+  'single_seller_checkout':
+      'Select items from one seller at a time to check out.',
   'nav_home': 'Home',
   'nav_category': 'Category',
   'nav_seller': 'Seller',
@@ -303,53 +315,54 @@ const Map<String, String> en = {
   'total_price': 'Total',
 
   // ── Address Book ────────────────────────────────────────
-  'add_address':              'Add Address',
-  'address_label':            'Address Label',
-  'full_address_field':       'Full Address',
-  'recipient_name':           'Recipient Name',
-  'address_line_1':           'Address Line 1',
-  'address_line_2':           'Address Line 2',
-  'address_line_2_optional':  'Apartment, floor, etc. (optional)',
-  'city_field':               'City',
-  'state_field':              'State / District',
-  'country_field':            'Country',
-  'postal_code':              'Postal Code',
-  'postal_code_optional':     'Postal code (optional)',
-  'set_as_default':           'Set as default address',
-  'save_address':             'Save Address',
-  'delete_address':           'Delete Address',
-  'delete_address_confirm':   'This address will be permanently removed.',
-  'address_deleted':          'Address has been deleted.',
-  'default_address_set':      'Default address updated',
-  'is_now_default':           'is now your default address.',
-  'no_addresses':             'No saved addresses',
-  'no_addresses_message':     'Add an address to speed up your checkout.',
-  'add_first_address':        'Add your first address',
-  'default_badge':            'Default',
-  'label_required':           'This field is required',
-  'address_required':         'Please enter a valid address',
-  'deleted':                  'Deleted',
+  'add_address': 'Add Address',
+  'address_label': 'Address Label',
+  'full_address_field': 'Full Address',
+  'recipient_name': 'Recipient Name',
+  'address_line_1': 'Address Line 1',
+  'address_line_2': 'Address Line 2',
+  'address_line_2_optional': 'Apartment, floor, etc. (optional)',
+  'city_field': 'City',
+  'state_field': 'State / District',
+  'country_field': 'Country',
+  'postal_code': 'Postal Code',
+  'postal_code_optional': 'Postal code (optional)',
+  'set_as_default': 'Set as default address',
+  'save_address': 'Save Address',
+  'delete_address': 'Delete Address',
+  'delete_address_confirm': 'This address will be permanently removed.',
+  'address_deleted': 'Address has been deleted.',
+  'default_address_set': 'Default address updated',
+  'is_now_default': 'is now your default address.',
+  'no_addresses': 'No saved addresses',
+  'no_addresses_message': 'Add an address to speed up your checkout.',
+  'add_first_address': 'Add your first address',
+  'default_badge': 'Default',
+  'label_required': 'This field is required',
+  'address_required': 'Please enter a valid address',
+  'deleted': 'Deleted',
 
   // ── Notifications ───────────────────────────────────────
-  'notifications':                 'Notifications',
-  'notifications_description':     'View and manage your notifications.',
-  'notifications_all':             'All',
-  'notifications_unread':          'Unread',
-  'notifications_read':            'Read',
-  'mark_read':                     'Mark as read',
-  'mark_all_read':                 'Mark all as read',
-  'no_notifications':              'No notifications',
-  'no_notifications_message':      "You're all caught up. New notifications will appear here.",
+  'notifications': 'Notifications',
+  'notifications_description': 'View and manage your notifications.',
+  'notifications_all': 'All',
+  'notifications_unread': 'Unread',
+  'notifications_read': 'Read',
+  'mark_read': 'Mark as read',
+  'mark_all_read': 'Mark all as read',
+  'no_notifications': 'No notifications',
+  'no_notifications_message':
+      "You're all caught up. New notifications will appear here.",
   'all_notifications_marked_read': 'All notifications marked as read',
 
   // ── Relative Time ───────────────────────────────────────
-  'time_just_now':    'Just now',
+  'time_just_now': 'Just now',
   'time_minutes_ago': '@count min ago',
-  'time_hours_ago':   '@count h ago',
-  'time_days_ago':    '@count d ago',
-  'time_weeks_ago':   '@count w ago',
-  'time_months_ago':  '@count mo ago',
-  'time_years_ago':   '@count y ago',
+  'time_hours_ago': '@count h ago',
+  'time_days_ago': '@count d ago',
+  'time_weeks_ago': '@count w ago',
+  'time_months_ago': '@count mo ago',
+  'time_years_ago': '@count y ago',
 
   // ── Validation ──────────────────────────────────────────
   'required_field': 'This field is required',
@@ -388,7 +401,8 @@ const Map<String, String> en = {
   'unread_of_total': '@unread unread of @total notifications',
   'view_order_action': 'View order',
   'cart_total': 'Cart total',
-  'cart_stores_note': 'Each store is paid for separately; shipping is calculated inside that store’s checkout.',
+  'cart_stores_note':
+      'Each store is paid for separately; shipping is calculated inside that store’s checkout.',
   'cart_items_from': '@items from @stores',
   'you_saved': 'You saved',
   'paying_store': 'Paying',
@@ -405,9 +419,11 @@ const Map<String, String> en = {
   'available_now_store': 'Available now from this store',
   'not_available_order': 'Not available to order',
   'currently_unavailable': 'Currently unavailable',
-  'out_of_stock_note': 'This product cannot be ordered right now. Browse the rest of the store, or check back later.',
+  'out_of_stock_note':
+      'This product cannot be ordered right now. Browse the rest of the store, or check back later.',
   'product_not_found': 'Product not found',
-  'product_not_found_body': 'This product may no longer be available, or the seller has removed it from their store.',
+  'product_not_found_body':
+      'This product may no longer be available, or the seller has removed it from their store.',
   'browse_products': 'Browse products',
   'loading_product': 'Loading product…',
   'pay_edfali_hint': 'A confirmation code arrives by SMS',
@@ -418,10 +434,13 @@ const Map<String, String> en = {
   'amount_label': 'Amount',
   'status_label': 'Status',
   'back_to_cart': 'Back to cart',
-  'edfali_lead': 'Edfali sent a confirmation code to @phone. Enter it to complete the payment.',
+  'edfali_lead':
+      'Edfali sent a confirmation code to @phone. Enter it to complete the payment.',
   'code_expires_in': 'Code expires in',
-  'edfali_hold_warn': 'Keep this screen open until you confirm — the order is held, and is cancelled automatically if the code expires.',
-  'edfali_no_resend': 'Once confirmed, the store starts preparing your order and you are notified at every status change. There is no resend service — if the code expires, order again from your cart.',
+  'edfali_hold_warn':
+      'Keep this screen open until you confirm — the order is held, and is cancelled automatically if the code expires.',
+  'edfali_no_resend':
+      'Once confirmed, the store starts preparing your order and you are notified at every status change. There is no resend service — if the code expires, order again from your cart.',
   'price_from': 'From',
   'price_to': 'To',
   'search_the_market': 'Search the market',
@@ -441,11 +460,14 @@ const Map<String, String> en = {
   'splash_tagline': "Libya's handmade marketplace — maker's hand to your door",
   'made_in_libya': 'Made in Libya',
   'onboard_1_title': 'Straight from the workshop',
-  'onboard_1_body': 'Every piece is sold by the Libyan maker who made it — no middleman between their bench and your door.',
+  'onboard_1_body':
+      'Every piece is sold by the Libyan maker who made it — no middleman between their bench and your door.',
   'onboard_2_title': 'Pay the way you like',
-  'onboard_2_body': 'Confirm with an Edfali code, or pay in cash when the order arrives.',
+  'onboard_2_body':
+      'Confirm with an Edfali code, or pay in cash when the order arrives.',
   'onboard_3_title': 'Follow it all the way',
-  'onboard_3_body': 'Track every order from the workshop to your city, and get a notification at each step.',
+  'onboard_3_body':
+      'Track every order from the workshop to your city, and get a notification at each step.',
   'skip': 'Skip',
   'next': 'Next',
   'start_shopping': 'Start shopping',
@@ -455,7 +477,8 @@ const Map<String, String> en = {
   'trust_stores': 'Verified Libyan stores',
   'trust_delivery': 'Delivery to every city',
   'sms_language': 'Language of the code message',
-  'first_time_note': 'First time here? We will ask for your name and email before sending the code.',
+  'first_time_note':
+      'First time here? We will ask for your name and email before sending the code.',
   'step_enter_phone': 'Enter your phone number',
   'step_enter_code': 'Enter the code we send you',
   'optional_chip': 'Optional',
@@ -505,19 +528,22 @@ const Map<String, String> en = {
   'refund_payout_method': 'Where should we send the money',
   'refund_review': 'Review',
   'refund_estimate': 'Estimated refund',
-  'refund_estimate_note': 'An estimate. Transport cost is deducted by the store after review, so the amount that lands may be lower.',
+  'refund_estimate_note':
+      'An estimate. Transport cost is deducted by the store after review, so the amount that lands may be lower.',
   'refund_step_1': 'Items and reason',
   'refund_step_2': 'Payout',
   'refund_continue': 'Continue',
   'refund_submit': 'Submit request',
-  'refund_no_payout_methods': 'No payout methods are available right now. Try again later.',
+  'refund_no_payout_methods':
+      'No payout methods are available right now. Try again later.',
   'refund_items_count': '@count of @total items',
   'label_chip_home': 'Home',
   'label_chip_work': 'Work',
   'label_chip_other': 'Other',
 
   // ── Errors ──────────────────────────────────────────────
-  'error_no_connection': 'No internet connection. Check your network and try again.',
+  'error_no_connection':
+      'No internet connection. Check your network and try again.',
   'error_timeout': 'The request took too long. Try again.',
   'error_server': 'Something went wrong on our side. Try again in a moment.',
   'error_not_found': 'We could not find what you were looking for.',
@@ -525,16 +551,24 @@ const Map<String, String> en = {
   'error_forbidden': 'You do not have access to this.',
   'error_rate_limited': 'Too many attempts. Wait a moment and try again.',
   'error_unexpected': 'Something went wrong. Try again.',
-  'error_bad_request': 'That request could not be completed. Check your details and try again.',
-  'error_account_deactivated': 'This account has been deactivated. Contact support for help.',
+  'error_bad_request':
+      'That request could not be completed. Check your details and try again.',
+  'error_account_deactivated':
+      'This account has been deactivated. Contact support for help.',
   'error_account_not_found': 'No account matches these details.',
-  'error_address_not_found': 'That address is no longer available. Pick another one.',
-  'error_edfali_account_not_found': 'No Edfali account is registered for this number.',
-  'error_edfali_otp_invalid': 'That code is not correct. Check it and try again.',
-  'error_edfali_payment_failed': 'The payment did not go through. Try again or use another method.',
-  'error_edfali_session_expired': 'The payment session expired. Start the order again.',
+  'error_address_not_found':
+      'That address is no longer available. Pick another one.',
+  'error_edfali_account_not_found':
+      'No Edfali account is registered for this number.',
+  'error_edfali_otp_invalid':
+      'That code is not correct. Check it and try again.',
+  'error_edfali_payment_failed':
+      'The payment did not go through. Try again or use another method.',
+  'error_edfali_session_expired':
+      'The payment session expired. Start the order again.',
   'error_payout_method_invalid': 'Check the payout details and try again.',
-  'error_refund_active_exists': 'A refund request for this order is already open.',
+  'error_refund_active_exists':
+      'A refund request for this order is already open.',
   'error_refund_items_required': 'Select at least one item to refund.',
   'error_refund_item_invalid': 'One of the selected items cannot be refunded.',
   'field_invalid_email': 'Enter a valid email address',
@@ -544,7 +578,18 @@ const Map<String, String> en = {
   'field_too_long': 'This is too long',
   'stock_limit_reached': 'Only @count left in stock',
   'only_n_left': 'Only @count left',
-  'vendor_does_not_deliver': 'This store does not deliver to the selected address. Pick another address, or order from a store that covers your area.',
+  'vendor_does_not_deliver':
+      'This store does not deliver to the selected address. Pick another address, or order from a store that covers your area.',
   'close': 'Close',
   'app_version': 'Version',
+  'sign_in_required_title': 'Sign in to continue',
+  'sign_in_required_checkout':
+      'Placing an order needs an account — it is what keeps your delivery address and your order history with you.',
+  'sign_in_required_stores_title': 'Stores need an account',
+  'sign_in_required_stores':
+      'Store profiles need an account. Products and categories stay open to everyone.',
+  'guest_account_title': 'You are browsing as a guest',
+  'guest_account_subtitle':
+      'Sign in to place orders, follow deliveries, save your addresses and get notifications.',
+  'not_now': 'Not now',
 };

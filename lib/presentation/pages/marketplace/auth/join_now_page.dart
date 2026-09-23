@@ -6,13 +6,17 @@ import '../../../../core/localization/locale_keys.dart';
 import '../../../../core/theme/marketplace_palette.dart';
 import '../../../../core/theme/marketplace_radius.dart';
 import '../../../../core/theme/marketplace_typography.dart';
+import '../../../../data/services/session_service.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
-/// Welcome — one action, because there is only one that works.
+/// Welcome — sign in, or browse first.
 ///
-/// Guest browsing is not offered: `/products`, `/categories`, `/stores` and
-/// `/banners` all require `clientAccessToken` and answer 401 without it, so
-/// there is nothing to look at before signing in. Nor is there a social
-/// sign-in endpoint anywhere in the contract.
+/// The catalogue is open: `/products`, `/categories` and `/banners` answer 200
+/// without a bearer, so a guest has a real shop to walk through. Signing in is
+/// still the primary action, because everything that ends in an order — stores,
+/// addresses, checkout, orders, notifications — is bearer-only and answers 401.
+/// There is no social sign-in endpoint anywhere in the contract, so none is
+/// offered.
 ///
 /// The three chips underneath are facts each backed by an endpoint —
 /// payment methods, verified stores, city coverage — not decoration.
@@ -83,7 +87,7 @@ class JoinNowPage extends StatelessWidget {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton(
-                  onPressed: () => Get.toNamed(Routes.MARKETPLACE_LOGIN),
+                  onPressed: () => AppRouter.toNamed(Routes.MARKETPLACE_LOGIN),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: palette.brand,
                     foregroundColor: palette.onBrand,
@@ -103,7 +107,23 @@ class JoinNowPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 6),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    SessionService.to.continueAsGuest();
+                    Get.offAllNamed(Routes.MARKETPLACE_MAIN);
+                  },
+                  child: Text(
+                    LocaleKeys.continueAsGuest.tr,
+                    style: MarketplaceTypography.pillLabel.copyWith(
+                      fontSize: 12,
+                      color: palette.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
               Center(
                 child: Text(
                   LocaleKeys.termsAgreement.tr,

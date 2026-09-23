@@ -23,6 +23,7 @@ import '../../../../domain/entities/marketplace/product_entity.dart';
 import '../../../../domain/entities/marketplace/seller_entity.dart';
 import '../../../controllers/marketplace/home_controller.dart';
 import '../../../controllers/marketplace/main_navigation_controller.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// Home — editorial layout: a full-bleed banner hero the content sheet
 /// overlaps, then a category pill row, a "New arrivals" rail, featured stores,
@@ -91,8 +92,7 @@ class _HomePageState extends State<HomePage> {
       // next page is simply the next one — no wrap arithmetic, and no jump
       // back to the first slide for the customer to see.
       if (_bannerController.hasClients && controller.banners.length > 1) {
-        final current =
-            _bannerController.page?.round() ?? HomeHero.loopBase;
+        final current = _bannerController.page?.round() ?? HomeHero.loopBase;
         _bannerController.animateToPage(
           current + 1,
           duration: const Duration(milliseconds: 400),
@@ -176,8 +176,8 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(height: 16),
                             HomeSectionHeader(
                               title: LocaleKeys.newArrivals.tr,
-                              onAction: () =>
-                                  Get.toNamed(Routes.MARKETPLACE_PRODUCTS_LIST),
+                              onAction: () => AppRouter.toNamed(
+                                  Routes.MARKETPLACE_PRODUCTS_LIST),
                             ),
                             const SizedBox(height: 10),
                             _buildProductRail(),
@@ -186,8 +186,8 @@ class _HomePageState extends State<HomePage> {
                             const SizedBox(height: 18),
                             HomeSectionHeader(
                               title: LocaleKeys.popularProducts.tr,
-                              onAction: () =>
-                                  Get.toNamed(Routes.MARKETPLACE_PRODUCTS_LIST),
+                              onAction: () => AppRouter.toNamed(
+                                  Routes.MARKETPLACE_PRODUCTS_LIST),
                             ),
                           ],
                         ),
@@ -216,7 +216,7 @@ class _HomePageState extends State<HomePage> {
 
   /// Opens the search screen. Filters live there too, so the filter button
   /// lands in the same place.
-  void _openSearch() => Get.toNamed(Routes.MARKETPLACE_SEARCH);
+  void _openSearch() => AppRouter.toNamed(Routes.MARKETPLACE_SEARCH);
 
   /// Stores have no standalone route — they are the third tab of the shell,
   /// so "See all" switches tabs instead of pushing a page.
@@ -227,7 +227,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openCategory(CategoryEntity category) {
-    Get.toNamed(
+    AppRouter.toNamed(
       Routes.MARKETPLACE_PRODUCTS_LIST,
       arguments: {'categoryId': category.id, 'categoryName': category.name},
     );
@@ -312,7 +312,7 @@ class _HomePageState extends State<HomePage> {
                   sellerName: product.sellerName,
                   price: product.price,
                   rating: product.rating,
-                  onTap: () => Get.toNamed(
+                  onTap: () => AppRouter.toNamed(
                     Routes.MARKETPLACE_PRODUCT,
                     arguments: product.id,
                   ),
@@ -363,7 +363,7 @@ class _HomePageState extends State<HomePage> {
                   isVerified: stores[i].isVerified,
                   description: stores[i].description,
                   showDivider: i != 0,
-                  onTap: () => Get.toNamed(
+                  onTap: () => AppRouter.toNamed(
                     Routes.MARKETPLACE_SELLER,
                     arguments: stores[i].id,
                   ),
@@ -412,7 +412,7 @@ class _HomePageState extends State<HomePage> {
                       name: product.name,
                       sellerName: product.sellerName,
                       price: product.price,
-                      onTap: () => Get.toNamed(
+                      onTap: () => AppRouter.toNamed(
                         Routes.MARKETPLACE_PRODUCT,
                         arguments: product.id,
                       ),

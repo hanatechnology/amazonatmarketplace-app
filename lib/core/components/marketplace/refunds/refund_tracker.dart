@@ -13,6 +13,7 @@ import '../app_network_image.dart';
 import '../orders/order_section_card.dart';
 import 'refund_progress_rail.dart';
 import 'refund_status_badge.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// Customer-facing view of an order's refund and payout progress: one block per
 /// request, newest first. Renders nothing when there is nothing to track.
@@ -146,8 +147,7 @@ class _RefundBlock extends StatelessWidget {
         if (refund.payouts.isNotEmpty) ...[
           const SizedBox(height: 10),
           _SubHeading(label: LocaleKeys.payouts.tr),
-          for (final payout in refund.payouts)
-            _PayoutRow(payout: payout),
+          for (final payout in refund.payouts) _PayoutRow(payout: payout),
         ],
       ],
     );
@@ -210,7 +210,7 @@ class _TransactionProofTile extends StatelessWidget {
     final palette = context.palette;
 
     return GestureDetector(
-      onTap: () => Get.toNamed(
+      onTap: () => AppRouter.toNamed(
         Routes.MARKETPLACE_TRANSACTION_PROOF,
         arguments: TransactionProofArgs(imageUrl: imageUrl),
       ),

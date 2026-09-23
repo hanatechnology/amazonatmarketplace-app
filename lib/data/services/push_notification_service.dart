@@ -8,6 +8,7 @@ import '../../domain/usecases/marketplace/notification/clear_device_token_use_ca
 import '../../domain/usecases/marketplace/notification/register_device_token_use_case.dart';
 import '../../presentation/controllers/marketplace/notification_badge_controller.dart';
 import 'storage_service.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// Handles a push that arrives while the app is terminated or backgrounded.
 ///
@@ -142,17 +143,17 @@ class PushNotificationService {
     switch (referenceType) {
       case 'order':
         if (referenceId != null && referenceId.isNotEmpty) {
-          Get.toNamed(
+          AppRouter.toNamed(
             Routes.MARKETPLACE_ORDER_DETAILS,
             arguments: referenceId,
           );
         } else {
-          Get.toNamed(Routes.MARKETPLACE_ORDERS);
+          AppRouter.toNamed(Routes.MARKETPLACE_ORDERS);
         }
       case 'refund':
-        Get.toNamed(Routes.MARKETPLACE_ORDERS);
+        AppRouter.toNamed(Routes.MARKETPLACE_ORDERS);
       default:
-        Get.toNamed(Routes.MARKETPLACE_NOTIFICATIONS);
+        AppRouter.toNamed(Routes.MARKETPLACE_NOTIFICATIONS);
     }
   }
 

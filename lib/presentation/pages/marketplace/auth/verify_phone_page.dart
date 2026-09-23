@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/localization/locale_keys.dart';
@@ -10,6 +9,7 @@ import '../../../../core/theme/status_tone.dart';
 import '../../../../core/utils/phone_utils.dart';
 import '../../../controllers/marketplace/auth_controller.dart';
 import '../../../../core/components/marketplace/sticky_back_bar.dart';
+import '../../../../core/components/marketplace/auth/otp_code_field.dart';
 
 /// The six-digit code from `POST /auth/request-otp`.
 ///
@@ -153,7 +153,8 @@ class _BackButton extends GetView<AuthController> {
   }
 }
 
-/// Six boxes, filled left to right in both languages — a code is an LTR run.
+/// Six boxes over one field, filled left to right in both languages — a code is
+/// an LTR run.
 class _PinRow extends GetView<AuthController> {
   const _PinRow();
 
@@ -161,81 +162,16 @@ class _PinRow extends GetView<AuthController> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: Row(
-        children: List.generate(
-          AuthController.otpLength,
-          (i) => Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(
-                right: i == AuthController.otpLength - 1 ? 0 : 8,
-              ),
-              child: _PinBox(index: i),
-            ),
-          ),
+      child: Obx(
+        () => OtpCodeField(
+          controller: controller.otpController,
+          focusNode: controller.otpFocusNode,
+          length: AuthController.otpLength,
+          hasError: controller.otpError.value != null,
+          onChanged: controller.onOtpChanged,
         ),
       ),
     );
-  }
-}
-
-class _PinBox extends GetView<AuthController> {
-  const _PinBox({required this.index});
-
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Obx(() {
-      final hasError = controller.otpError.value != null;
-      final borderColor = hasError
-          ? StatusTone.danger.foreground(palette.isDark)
-          : palette.hairline;
-
-      return SizedBox(
-        height: 56,
-        child: TextField(
-          controller: controller.otpControllers[index],
-          focusNode: controller.otpFocusNodes[index],
-          keyboardType: TextInputType.number,
-          textAlign: TextAlign.center,
-          // No maxLength: SMS autofill delivers the whole code into one box,
-          // and the controller spreads it across the row.
-          autofillHints: index == 0 ? const [AutofillHints.oneTimeCode] : null,
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(AuthController.otpLength),
-          ],
-          cursorColor: palette.brand,
-          style: MarketplaceTypography.rowTitle.copyWith(
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-            color: hasError
-                ? StatusTone.danger.foreground(palette.isDark)
-                : palette.textPrimary,
-          ),
-          decoration: InputDecoration(
-            counterText: '',
-            filled: true,
-            fillColor: palette.surface,
-            contentPadding: EdgeInsets.zero,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: borderColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: hasError ? borderColor : palette.brand,
-                width: 1.5,
-              ),
-            ),
-          ),
-          onChanged: (value) => controller.onOtpChanged(index, value),
-        ),
-      );
-    });
   }
 }
 

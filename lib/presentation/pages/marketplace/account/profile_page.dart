@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../../app/routes/app_routes.dart';
 import '../../../../core/components/marketplace/appearance_sheet.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/localization/locale_controller.dart';
@@ -9,7 +10,10 @@ import '../../../../core/theme/marketplace_palette.dart';
 import '../../../../core/theme/marketplace_radius.dart';
 import '../../../../core/theme/marketplace_typography.dart';
 import '../../../../core/theme/status_tone.dart';
+import '../../../../core/components/marketplace/auth/sign_in_required_view.dart';
+import '../../../../data/services/session_service.dart';
 import '../../../controllers/marketplace/profile_controller.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// The account tab.
 ///
@@ -24,6 +28,25 @@ import '../../../controllers/marketplace/profile_controller.dart';
 /// is in the spec — so there is nowhere to send an uploaded image.
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // A guest has no customer record to show — there is no `GET /me` to fall
+    // back on, and all three counters are bearer-only calls — so the tab
+    // becomes an invitation plus the preferences that work without a session.
+    // [ProfileController] is never resolved on that path, which is what keeps
+    // its three startup calls from firing as guaranteed 401s.
+    return Obx(
+      () => SessionService.to.isSignedIn
+          ? const _SignedInAccount()
+          : const _GuestAccount(),
+    );
+  }
+}
+
+/// The account tab proper, once there is a customer behind it.
+class _SignedInAccount extends StatelessWidget {
+  const _SignedInAccount();
 
   static const double _gutter = 20;
 
@@ -102,6 +125,65 @@ class ProfilePage extends StatelessWidget {
               const _VersionFooter(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// What the account tab is for a guest: the reason to sign in, then the
+/// settings that need no account at all. Deliberately not a bare wall — the
+/// language and appearance switches are the two things customers look for here
+/// before they have an account, and both are local.
+class _GuestAccount extends StatelessWidget {
+  const _GuestAccount();
+
+  static const double _gutter = 20;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    return Scaffold(
+      backgroundColor: palette.background,
+      body: SafeArea(
+        bottom: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(_gutter, 8, _gutter, 100),
+          children: [
+            const SizedBox(height: 12),
+            const SignInRequiredView(
+              titleKey: LocaleKeys.guestAccountTitle,
+              bodyKey: LocaleKeys.guestAccountSubtitle,
+              icon: Icons.person_outline_rounded,
+            ),
+            const SizedBox(height: 26),
+            _SectionLabel(text: LocaleKeys.sectionPreferences.tr),
+            Obx(
+              () => _MenuRow(
+                icon: Icons.language_rounded,
+                label: LocaleKeys.language.tr,
+                trailingValue: Get.find<LocaleController>().isArabic
+                    ? 'العربية'
+                    : 'English',
+                onTap: Get.find<LocaleController>().toggleLocale,
+              ),
+            ),
+            _MenuRow(
+              icon: Icons.brightness_6_outlined,
+              label: LocaleKeys.appearance.tr,
+              onTap: () => showAppearanceSheet(context),
+            ),
+            const SizedBox(height: 18),
+            _SectionLabel(text: LocaleKeys.sectionAccount.tr),
+            _MenuRow(
+              icon: Icons.help_outline_rounded,
+              label: LocaleKeys.helpCenter.tr,
+              onTap: () => AppRouter.toNamed<void>(Routes.MARKETPLACE_HELP),
+            ),
+            const SizedBox(height: 24),
+            const _VersionFooter(),
+          ],
         ),
       ),
     );
@@ -347,9 +429,8 @@ class _MenuRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final isDark = palette.isDark;
-    final tint = isDanger
-        ? StatusTone.danger.foreground(isDark)
-        : palette.textSecondary;
+    final tint =
+        isDanger ? StatusTone.danger.foreground(isDark) : palette.textSecondary;
 
     return GestureDetector(
       onTap: onTap,

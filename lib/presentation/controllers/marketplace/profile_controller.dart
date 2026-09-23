@@ -9,8 +9,10 @@ import 'package:marketplace/core/network/dio_client.dart';
 import 'package:marketplace/data/models/marketplace/auth_user_model.dart';
 import 'package:marketplace/data/services/storage_service.dart';
 import 'package:marketplace/data/services/push_notification_service.dart';
+import 'package:marketplace/data/services/session_service.dart';
 import 'package:marketplace/presentation/controllers/marketplace/auth_controller.dart';
 import 'package:marketplace/presentation/controllers/marketplace/notification_badge_controller.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 /// Account tab.
 ///
@@ -97,22 +99,24 @@ class ProfileController extends GetxController {
 
   // ── Actions ───────────────────────────────────────────────
 
-  void goToOrders() => Get.toNamed(Routes.MARKETPLACE_ORDERS);
+  void goToOrders() => AppRouter.toNamed(Routes.MARKETPLACE_ORDERS);
 
-  void goToAddresses() => Get.toNamed(Routes.MARKETPLACE_ADDRESSES);
+  void goToAddresses() => AppRouter.toNamed(Routes.MARKETPLACE_ADDRESSES);
 
   /// Awaited: reading a notification changes the unread count, and this tab
   /// would otherwise keep the number it loaded on init until a pull-to-refresh.
   Future<void> goToNotifications() async {
-    await Get.toNamed(Routes.MARKETPLACE_NOTIFICATIONS);
+    await AppRouter.toNamed(Routes.MARKETPLACE_NOTIFICATIONS);
     await _loadUnreadCount();
   }
 
-  void goToHelp() => Get.toNamed(Routes.MARKETPLACE_HELP);
+  void goToHelp() => AppRouter.toNamed(Routes.MARKETPLACE_HELP);
 
   void toggleLanguage() => Get.find<LocaleController>().toggleLocale();
 
-  /// Drops the JWT and the cached customer, then sends the user back to login.
+  /// Drops the JWT and the cached customer, then drops the customer back into
+  /// the shell as a guest — the catalogue is open, so logging out is a change of
+  /// identity, not an ejection from the app. The web client behaves the same.
   /// The in-memory token on [DioClient] is cleared too, so a request already
   /// being built cannot go out authenticated.
   Future<void> logout() async {
@@ -123,7 +127,8 @@ class ProfileController extends GetxController {
     await StorageService.instance.deleteToken();
     StorageService.instance.remove(AuthController.userStorageKey);
     Get.find<DioClient>().updateToken(null);
+    SessionService.to.markSignedOut(asGuest: true);
     user.value = null;
-    Get.offAllNamed(Routes.MARKETPLACE_LOGIN);
+    Get.offAllNamed(Routes.MARKETPLACE_MAIN);
   }
 }

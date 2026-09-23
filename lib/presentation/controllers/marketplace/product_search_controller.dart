@@ -11,6 +11,7 @@ import '../../../domain/entities/marketplace/product_query.dart';
 import '../../../domain/usecases/base_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_category_tree_use_case.dart';
 import '../../../domain/usecases/marketplace/product/get_products_page_use_case.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 const String kSearchResults = 'search_results';
 const String kSearchCategories = 'search_categories';
@@ -235,5 +236,5 @@ class ProductSearchController
   }
 
   void openProduct(ProductEntity product) =>
-      Get.toNamed(Routes.MARKETPLACE_PRODUCT, arguments: product.id);
+      AppRouter.toNamed(Routes.MARKETPLACE_PRODUCT, arguments: product.id);
 }

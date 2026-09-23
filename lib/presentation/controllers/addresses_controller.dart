@@ -11,6 +11,7 @@ import 'package:marketplace/domain/usecases/marketplace/address/get_addresses_us
 import 'package:marketplace/domain/usecases/marketplace/address/get_cities_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/address/set_default_address_use_case.dart';
 import 'package:marketplace/core/components/marketplace/address/address_delete_sheet.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 const String kAddresses = 'addresses';
 
@@ -21,8 +22,8 @@ class AddressesController extends BaseStateController<GetAddressesUseCase> {
 
   // ── State ─────────────────────────────────────────────────
   final RxList<AddressEntity> addresses = <AddressEntity>[].obs;
-  final RxList<CityEntity> cities       = <CityEntity>[].obs;
-  final RxString deletingId             = ''.obs;
+  final RxList<CityEntity> cities = <CityEntity>[].obs;
+  final RxString deletingId = ''.obs;
 
   // ── Computed ──────────────────────────────────────────────
   /// Reactive inside any [Obx] — reads [kAddresses] state.
@@ -56,8 +57,8 @@ class AddressesController extends BaseStateController<GetAddressesUseCase> {
   void onInit() {
     super.onInit(); // resolves useCase = GetAddressesUseCase via Get.find
     _deleteAddress = Get.find<DeleteAddressUseCase>();
-    _setDefault    = Get.find<SetDefaultAddressUseCase>();
-    _getCities     = Get.find<GetCitiesUseCase>();
+    _setDefault = Get.find<SetDefaultAddressUseCase>();
+    _getCities = Get.find<GetCitiesUseCase>();
     _loadAll();
   }
 
@@ -83,7 +84,7 @@ class AddressesController extends BaseStateController<GetAddressesUseCase> {
 
   // ── Navigation ────────────────────────────────────────────
   void navigateToAdd() {
-    Get.toNamed(Routes.MARKETPLACE_ADD_ADDRESS)
+    AppRouter.toNamed(Routes.MARKETPLACE_ADD_ADDRESS)
         ?.then((_) => loadAddresses());
   }
 
@@ -131,7 +132,8 @@ class AddressesController extends BaseStateController<GetAddressesUseCase> {
           backgroundColor: MarketplaceColors.secondary,
           colorText: MarketplaceColors.textBody,
           snackPosition: SnackPosition.BOTTOM,
-          icon: const Icon(Icons.check_circle, color: MarketplaceColors.primary),
+          icon:
+              const Icon(Icons.check_circle, color: MarketplaceColors.primary),
         );
       },
       onError: (message, _) => Get.snackbar(LocaleKeys.error.tr, message),

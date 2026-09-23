@@ -1,9 +1,9 @@
-import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/bases/base_state_controller.dart';
 import '../../../domain/entities/marketplace/category_entity.dart';
 import '../../../domain/usecases/marketplace/product/get_category_tree_use_case.dart';
+import 'package:marketplace/app/routes/app_router.dart';
 
 const String kCategoryProducts = 'categories'; // key kept for compat
 
@@ -38,7 +38,7 @@ class CategoryController extends BaseStateController<GetCategoryTreeUseCase> {
   }
 
   void openCategory(CategoryEntity category) {
-    Get.toNamed(
+    AppRouter.toNamed(
       Routes.MARKETPLACE_PRODUCTS_LIST,
       arguments: <String, dynamic>{
         'categoryId': category.id,
