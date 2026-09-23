@@ -28,6 +28,11 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Amazonat uses your location to centre the map on where you are, so you can pin your delivery door.</string>
+	<!-- geolocator links the always-authorization APIs, so App Store Connect's
+	     static scan demands this string even though the app only ever requests
+	     when-in-use. The wording says what the app actually does. -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Amazonat uses your location only while you are choosing a delivery address, to centre the map on where you are. It never tracks you in the background.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Amazonat saves refund transfer receipts to your photo library so you can keep a copy.</string>
 	<key>LSRequiresIPhoneOS</key>
