@@ -17,6 +17,8 @@ import '../../../../data/repositories/product_repository.dart';
 import '../../../../data/repositories/seller_repository.dart';
 import '../../../../data/repositories/marketplace_order_repository.dart';
 import '../../../../data/repositories/address_repository.dart';
+import '../../../../data/repositories/auth_repository.dart';
+import '../../../../domain/usecases/marketplace/auth/delete_account_use_case.dart';
 import '../../../../data/services/api_service.dart';
 import '../../../../domain/usecases/marketplace/product/get_products_use_case.dart';
 import '../../../../domain/usecases/marketplace/product/get_products_page_use_case.dart';
@@ -68,6 +70,13 @@ class MainNavigationBinding extends Bindings {
       Get.lazyPut(() => AddressRepository(Get.find<ApiService>()), fenix: true);
     }
     Get.lazyPut(() => GetAddressesUseCase(Get.find()), fenix: true);
+
+    // Account deletion lives on the account tab, so its repository cannot wait
+    // for the auth binding — that one is only built on the sign-in route.
+    if (!Get.isRegistered<AuthRepository>()) {
+      Get.lazyPut(() => AuthRepository(Get.find<ApiService>()), fenix: true);
+    }
+    Get.lazyPut(() => DeleteAccountUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => NotificationBadgeController(), fenix: true);
 
     // Local cart use cases (LocalCartRepository is permanent from InitialBinding)

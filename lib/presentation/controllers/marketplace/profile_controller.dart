@@ -1,7 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:marketplace/app/routes/app_routes.dart';
 import 'package:marketplace/domain/usecases/base_use_case.dart';
+import 'package:marketplace/core/legal/legal_document.dart';
+import 'package:marketplace/core/localization/locale_keys.dart';
+import 'package:marketplace/core/utils/date_formatter.dart';
 import 'package:marketplace/domain/usecases/marketplace/address/get_addresses_use_case.dart';
+import 'package:marketplace/domain/usecases/marketplace/auth/delete_account_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/notification/get_unread_count_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/order/get_orders_use_case.dart';
 import 'package:marketplace/core/localization/locale_controller.dart';
@@ -112,6 +117,16 @@ class ProfileController extends GetxController {
 
   void goToHelp() => AppRouter.toNamed(Routes.MARKETPLACE_HELP);
 
+  void goToPrivacyPolicy() => AppRouter.toNamed(
+        Routes.MARKETPLACE_LEGAL,
+        arguments: LegalDocumentKind.privacyPolicy,
+      );
+
+  void goToTerms() => AppRouter.toNamed(
+        Routes.MARKETPLACE_LEGAL,
+        arguments: LegalDocumentKind.termsOfService,
+      );
+
   void toggleLanguage() => Get.find<LocaleController>().toggleLocale();
 
   /// Drops the JWT and the cached customer, then drops the customer back into
@@ -123,7 +138,70 @@ class ProfileController extends GetxController {
     // The device must stop receiving this customer's pushes. Best-effort: a
     // failure here cannot be allowed to trap them in a signed-in state.
     await PushNotificationService.instance.unregister();
+    await _endSession();
+  }
 
+  /// True while `DELETE /auth/account` is in flight, so the row can show it is
+  /// working and refuse a second tap.
+  final isDeletingAccount = false.obs;
+
+  /// Erases the account, then signs out.
+  ///
+  /// Call only after [showDeleteAccountSheet] has been confirmed — this method
+  /// asks nothing and cannot be undone. The server deactivates the account as
+  /// it answers, so the token that made the call is already dead: the local
+  /// session has to go regardless of what any later request would say.
+  Future<void> deleteAccount() async {
+    if (isDeletingAccount.value) return;
+    isDeletingAccount.value = true;
+
+    final state = await Get.find<DeleteAccountUseCase>().execute();
+
+    await state.when(
+      onInitial: () async {},
+      onLoading: () async {},
+      onSuccess: (deletion, _) async {
+        // Unregistering the push token is a bearer call, and the bearer is
+        // already invalid — skip it. The server cleared `fcm_token` as part of
+        // the deletion, so this device stops receiving pushes either way.
+        // Cleared before the teardown: `_endSession` replaces the route stack,
+        // which can dispose this controller, and the flag is only meaningful
+        // while the row that reads it is still on screen.
+        isDeletingAccount.value = false;
+        await _endSession();
+
+        final scheduled = deletion.scheduledAt;
+        Get.snackbar(
+          LocaleKeys.deleteAccountDoneTitle.tr,
+          scheduled == null
+              ? LocaleKeys.deleteAccountDoneBody.trParams(
+                  {'days': '${deletion.retentionDays}'},
+                )
+              : LocaleKeys.deleteAccountDoneOn.trParams(
+                  {'date': DateFormatter.mediumDate(scheduled)},
+                ),
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+          duration: const Duration(seconds: 6),
+        );
+      },
+      onError: (message, _) async {
+        isDeletingAccount.value = false;
+        Get.snackbar(
+          LocaleKeys.error.tr,
+          message,
+          backgroundColor: const Color(0xFFFFEBEE),
+          colorText: const Color(0xFFD32F2F),
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
+      },
+    );
+  }
+
+  /// Drops the JWT, the cached customer and the in-memory token, then returns
+  /// the app to the shell as a guest.
+  Future<void> _endSession() async {
     await StorageService.instance.deleteToken();
     StorageService.instance.remove(AuthController.userStorageKey);
     Get.find<DioClient>().updateToken(null);

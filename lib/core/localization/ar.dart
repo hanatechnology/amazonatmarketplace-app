@@ -385,7 +385,6 @@ const Map<String, String> ar = {
   'items_count': '@count منتج',
   'items_count_one': 'منتج واحد',
   'sellers_subtitle': 'حرفيون ليبيون يبيعون مباشرة من ورشهم',
-  'chat_on_whatsapp': 'تواصل عبر واتساب',
   'clear_search': 'مسح البحث',
   'loading_more_sellers': 'جارٍ تحميل المزيد من المتاجر…',
   'products_label': 'المنتجات',
@@ -568,6 +567,32 @@ const Map<String, String> ar = {
   'delivery_unavailable_short': 'لا يوجد توصيل',
   'delivery_days': 'يصل خلال @days أيام تقريباً',
   'close': 'إغلاق',
+  'delete_account': 'حذف الحساب',
+  'delete_account_row_hint': 'حذف حسابك وبياناتك الشخصية',
+  'delete_account_body':
+      'سيؤدي هذا إلى حذف حسابك في أمازونات، ولا يمكن التراجع عنه من داخل التطبيق.',
+  'delete_account_point_access':
+      'يتم تسجيل خروجك فورًا، ولن تتمكن من الدخول بهذا الرقم مرة أخرى.',
+  'delete_account_point_grace':
+      'تُحذف بياناتك الشخصية — الاسم ورقم الهاتف والبريد والعناوين المحفوظة — نهائيًا بعد 30 يومًا من الطلب.',
+  'delete_account_point_orders':
+      'تُحفظ سجلات الطلبات والمدفوعات كمستندات مالية بعد إخفاء ما يدل على هويتك.',
+  'delete_account_acknowledge':
+      'أفهم أن حسابي سيُحذف وأنه لا يمكن التراجع عن ذلك من داخل التطبيق.',
+  'delete_account_confirm': 'حذف حسابي',
+  'delete_account_done_title': 'تم تسجيل طلب حذف الحساب',
+  'delete_account_done_body':
+      'ستُحذف بياناتك خلال @days يومًا. راسل الدعم قبل ذلك للتراجع عن الطلب.',
+  'delete_account_done_on':
+      'ستُحذف بياناتك في @date. راسل الدعم قبل ذلك للتراجع عن الطلب.',
+  'help_center_subtitle': 'إجابات، وطريقة للتواصل معنا',
+  'still_need_help': 'لم تجد إجابتك؟',
+  'still_need_help_body': 'راسلنا مع رقم الطلب وسنعود إليك في أقرب وقت.',
+  'email_support': 'مراسلة الدعم',
+  'call_support': 'الاتصال بالدعم',
+  'support_email_subject': 'تطبيق أمازونات — طلب دعم',
+  'last_updated_on': 'آخر تحديث @date',
+  'legal_section_label': 'القانونية',
   'app_version': 'الإصدار',
   'sign_in_required_title': 'سجّل الدخول للمتابعة',
   'sign_in_required_checkout':

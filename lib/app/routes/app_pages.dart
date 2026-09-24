@@ -27,6 +27,7 @@ import '../../presentation/pages/marketplace/orders/order_details_page.dart';
 import '../../presentation/pages/marketplace/account/address_book_page.dart';
 import '../../presentation/pages/marketplace/account/add_address_page.dart';
 import '../../presentation/pages/marketplace/account/help_center_page.dart';
+import '../../presentation/pages/marketplace/account/legal_document_page.dart';
 
 // Bindings
 import '../../presentation/pages/marketplace/auth/bindings/marketplace_auth_binding.dart';
@@ -204,6 +205,14 @@ abstract class AppPages {
       name: Routes.MARKETPLACE_HELP,
       page: () => const HelpCenterPage(),
       binding: AccountBinding(),
+    ),
+    // Privacy policy and terms share one screen; the route argument picks the
+    // document. Open to guests — both stores expect the policies to be
+    // readable without an account.
+    GetPage(
+      name: Routes.MARKETPLACE_LEGAL,
+      page: () => const LegalDocumentPage(),
+      transition: Transition.rightToLeft,
     ),
   ];
 }

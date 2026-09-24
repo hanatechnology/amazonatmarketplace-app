@@ -379,8 +379,8 @@ class _ItemRow extends StatelessWidget {
   }
 }
 
-/// The selling store, with a way through to its page — where the WhatsApp
-/// contact button lives. The order payload carries the vendor id and name only.
+/// The selling store, with a way through to its page. The order payload
+/// carries the vendor id and name only.
 class _StoreCard extends StatelessWidget {
   const _StoreCard({required this.order});
 

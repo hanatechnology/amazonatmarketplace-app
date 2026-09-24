@@ -53,8 +53,6 @@ abstract class MarketplaceColors {
   /// Link text — "Learn more" in descriptions/reviews
   static const Color link = Color(0xFF4897FF);
 
-  /// WhatsApp FAB background
-  static const Color whatsapp = Color(0xFF60D668);
 
   /// Status "Closed" dot
   static const Color statusClosed = Color(0xFFFF0000);

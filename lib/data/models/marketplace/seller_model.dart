@@ -12,7 +12,6 @@ class SellerModel {
   final String? storeDescriptionEn;
   final String? logoUrl;
   final String? bannerUrl;
-  final String whatsappNumber;
   final bool isVerified;
   final String? applicationStatus;
   final DateTime? approvedAt;
@@ -26,7 +25,6 @@ class SellerModel {
     this.storeDescriptionEn,
     this.logoUrl,
     this.bannerUrl,
-    required this.whatsappNumber,
     required this.isVerified,
     this.applicationStatus,
     this.approvedAt,
@@ -42,7 +40,6 @@ class SellerModel {
       storeDescriptionEn: json['store_description_en'] as String?,
       logoUrl: json['logo_url'] as String?,
       bannerUrl: json['banner_url'] as String?,
-      whatsappNumber: json['whatsapp_number'] as String? ?? '',
       isVerified: json['is_verified'] as bool? ?? false,
       applicationStatus: json['application_status'] as String?,
       approvedAt: DateTime.tryParse(json['approved_at'] as String? ?? ''),
@@ -59,7 +56,6 @@ class SellerModel {
       'store_description_en': storeDescriptionEn,
       'logo_url': logoUrl,
       'banner_url': bannerUrl,
-      'whatsapp_number': whatsappNumber,
       'is_verified': isVerified,
       'application_status': applicationStatus,
       'approved_at': approvedAt?.toIso8601String(),
@@ -83,7 +79,6 @@ class SellerModel {
       description: description,
       logoUrl: logoUrl,
       bannerUrl: bannerUrl,
-      whatsappNumber: whatsappNumber,
       isVerified: isVerified,
     );
   }

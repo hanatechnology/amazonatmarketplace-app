@@ -5,13 +5,15 @@ import 'package:equatable/equatable.dart';
 /// Mirrors `GET /stores` — the API calls these "stores", the mobile UI calls
 /// them "sellers". Only fields the OAS documents are modelled here; rating,
 /// follower count, and open/closed status have no endpoint yet.
+///
+/// There is no contact number: the customer API no longer returns the store's
+/// phone, so nothing here can offer a channel around the platform.
 class SellerEntity extends Equatable {
   final String id;
   final String name;
   final String? description;
   final String? logoUrl;
   final String? bannerUrl;
-  final String whatsappNumber;
   final bool isVerified;
 
   const SellerEntity({
@@ -20,7 +22,6 @@ class SellerEntity extends Equatable {
     this.description,
     this.logoUrl,
     this.bannerUrl,
-    required this.whatsappNumber,
     required this.isVerified,
   });
 
@@ -31,7 +32,6 @@ class SellerEntity extends Equatable {
         description,
         logoUrl,
         bannerUrl,
-        whatsappNumber,
         isVerified,
       ];
 }

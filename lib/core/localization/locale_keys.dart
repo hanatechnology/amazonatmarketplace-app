@@ -413,7 +413,6 @@ abstract class LocaleKeys {
 
   // ── Sellers + notifications (redesign) ──────────────────
   static const String sellersSubtitle = 'sellers_subtitle';
-  static const String chatOnWhatsApp = 'chat_on_whatsapp';
   static const String clearSearch = 'clear_search';
   static const String loadingMoreSellers = 'loading_more_sellers';
   static const String productsLabel = 'products_label';
@@ -603,5 +602,24 @@ abstract class LocaleKeys {
   static const String deliveryUnavailableShort = 'delivery_unavailable_short';
   static const String deliveryDays = 'delivery_days';
   static const String close = 'close';
+  static const String deleteAccount = 'delete_account';
+  static const String deleteAccountRowHint = 'delete_account_row_hint';
+  static const String deleteAccountBody = 'delete_account_body';
+  static const String deleteAccountPointAccess = 'delete_account_point_access';
+  static const String deleteAccountPointGrace = 'delete_account_point_grace';
+  static const String deleteAccountPointOrders = 'delete_account_point_orders';
+  static const String deleteAccountAcknowledge = 'delete_account_acknowledge';
+  static const String deleteAccountConfirm = 'delete_account_confirm';
+  static const String deleteAccountDoneTitle = 'delete_account_done_title';
+  static const String deleteAccountDoneBody = 'delete_account_done_body';
+  static const String deleteAccountDoneOn = 'delete_account_done_on';
+  static const String helpCenterSubtitle = 'help_center_subtitle';
+  static const String stillNeedHelp = 'still_need_help';
+  static const String stillNeedHelpBody = 'still_need_help_body';
+  static const String emailSupport = 'email_support';
+  static const String callSupport = 'call_support';
+  static const String supportEmailSubject = 'support_email_subject';
+  static const String lastUpdatedOn = 'last_updated_on';
+  static const String legalSectionLabel = 'legal_section_label';
   static const String appVersion = 'app_version';
 }

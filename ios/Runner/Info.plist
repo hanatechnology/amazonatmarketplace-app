@@ -37,6 +37,12 @@
 	<string>Amazonat saves refund transfer receipts to your photo library so you can keep a copy.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- The app's only cryptography is HTTPS to its own API, which is exempt
+	     under the US export regulations. Declaring it here answers App Store
+	     Connect's export-compliance question at upload instead of holding every
+	     build behind it. Revisit if the app ever ships its own encryption. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -67,13 +73,6 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>

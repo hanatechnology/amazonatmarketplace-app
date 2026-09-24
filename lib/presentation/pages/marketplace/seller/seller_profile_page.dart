@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/components/marketplace/app_network_image.dart';
 import '../../../../core/components/marketplace/product_card.dart';
@@ -18,8 +17,11 @@ import '../../../controllers/marketplace/cart_controller.dart';
 import '../../../controllers/marketplace/seller_profile_controller.dart';
 import '../../../../core/components/marketplace/sticky_back_bar.dart';
 
-/// One store: banner, identity, its products, and the single action the API can
-/// actually back — a WhatsApp conversation with the maker.
+/// One store: banner, identity, and its products.
+///
+/// No direct contact channel: the store's phone number is deliberately not part
+/// of the customer payload, so orders and complaints run through the platform
+/// rather than a private chat it cannot see.
 class SellerProfilePage extends GetView<SellerProfileController> {
   const SellerProfilePage({super.key});
 
@@ -74,7 +76,6 @@ class _SellerBody extends GetView<SellerProfileController> {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final whatsapp = seller.whatsappNumber.trim();
 
     // One Obx around the whole scroll view rather than per-sliver: Obx is a
     // plain widget, so it cannot sit in a `slivers` list.
@@ -155,7 +156,6 @@ class _SellerBody extends GetView<SellerProfileController> {
             );
           }),
         ),
-        if (whatsapp.isNotEmpty) _WhatsAppBar(number: whatsapp),
       ],
     );
   }
@@ -366,8 +366,7 @@ class _ProductsGridShimmer extends StatelessWidget {
   }
 }
 
-/// The store has no products yet. The WhatsApp bar stays put — the customer can
-/// still reach the maker.
+/// The store has no products yet.
 class _NoProducts extends StatelessWidget {
   const _NoProducts();
 
@@ -449,96 +448,6 @@ class _ProductsError extends GetView<SellerProfileController> {
         ],
       ),
     );
-  }
-}
-
-/// The store's one real CTA. `whatsappNumber` is the only contact channel the
-/// store payload carries.
-class _WhatsAppBar extends StatelessWidget {
-  const _WhatsAppBar({required this.number});
-
-  final String number;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(
-        SellerProfilePage._gutter,
-        12,
-        SellerProfilePage._gutter,
-        0,
-      ),
-      decoration: BoxDecoration(
-        color: palette.surface,
-        border: Border(top: BorderSide(color: palette.hairline)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
-                height: 46,
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _openWhatsApp,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: palette.brand,
-                    foregroundColor: palette.onBrand,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(MarketplaceRadius.full),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.chat_bubble_outline_rounded,
-                        size: 17,
-                        color: palette.onBrand,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        LocaleKeys.chatOnWhatsApp.tr,
-                        style: MarketplaceTypography.buttonLabel.copyWith(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: palette.onBrand,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                number,
-                textDirection: TextDirection.ltr,
-                style: MarketplaceTypography.rowMeta.copyWith(
-                  fontSize: 10.5,
-                  color: palette.textMuted,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// wa.me wants digits only — no `+`, spaces or dashes.
-  Future<void> _openWhatsApp() async {
-    final digits = number.replaceAll(RegExp(r'\D'), '');
-    if (digits.isEmpty) return;
-
-    final uri = Uri.parse('https://wa.me/$digits');
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 }
 

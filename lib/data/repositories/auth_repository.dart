@@ -1,6 +1,7 @@
 import 'package:marketplace/core/bases/base_repository.dart';
 import 'package:marketplace/core/bases/base_response.dart';
 import 'package:marketplace/core/network/result.dart';
+import 'package:marketplace/data/models/marketplace/account_deletion_model.dart';
 import 'package:marketplace/data/models/marketplace/auth_user_model.dart';
 import 'package:marketplace/data/services/api_service.dart';
 
@@ -43,6 +44,25 @@ class AuthRepository extends BaseRepository<ApiService> {
         return response.data;
       },
       body: {'phone': phone, 'otp': otp},
+    );
+  }
+
+  /// `DELETE /auth/account` — schedules erasure of the signed-in customer.
+  ///
+  /// The account is deactivated the moment this returns, which invalidates the
+  /// very token that authorised the call. Nothing else may be requested
+  /// afterwards: the caller's next move is to drop the session locally.
+  Future<Result<AccountDeletionModel>> deleteAccount() {
+    return delete<AccountDeletionModel>(
+      '/auth/account',
+      (json) {
+        final response = BaseResponse<AccountDeletionModel>.fromJson(
+          json as Map<String, dynamic>,
+          (jsonData) =>
+              AccountDeletionModel.fromJson(jsonData as Map<String, dynamic>),
+        );
+        return response.data;
+      },
     );
   }
 }

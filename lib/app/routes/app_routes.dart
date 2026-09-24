@@ -46,4 +46,5 @@ abstract class Routes {
   static const MARKETPLACE_ADDRESSES = '/marketplace/addresses';
   static const MARKETPLACE_ADD_ADDRESS = '/marketplace/add-address';
   static const MARKETPLACE_HELP = '/marketplace/help';
+  static const MARKETPLACE_LEGAL = '/marketplace/legal';
 }

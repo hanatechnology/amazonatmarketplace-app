@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
+import '../../../../core/legal/legal_document.dart';
 import '../../../../core/localization/locale_keys.dart';
 import '../../../../core/theme/marketplace_palette.dart';
 import '../../../../core/theme/marketplace_radius.dart';
@@ -124,21 +125,88 @@ class JoinNowPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 6),
-              Center(
-                child: Text(
-                  LocaleKeys.termsAgreement.tr,
-                  textAlign: TextAlign.center,
-                  style: MarketplaceTypography.rowMeta.copyWith(
-                    fontSize: 10,
-                    color: palette.textMuted,
-                  ),
-                ),
-              ),
+              const Center(child: _TermsNotice()),
               const SizedBox(height: 18),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "By continuing, you agree to our Terms of Service and Privacy Policy" —
+/// with both halves actually opening the document they name.
+///
+/// The consent line was previously flat text beside two unused translation
+/// keys, which is a policy notice that cannot be read: every store requires the
+/// policies to be reachable, and a customer agreeing to them has to be able to
+/// see what they are agreeing to.
+class _TermsNotice extends StatelessWidget {
+  const _TermsNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    final base = MarketplaceTypography.rowMeta.copyWith(
+      fontSize: 10,
+      color: palette.textMuted,
+      height: 1.6,
+    );
+    final link = base.copyWith(
+      color: palette.brand,
+      fontWeight: FontWeight.w700,
+      decoration: TextDecoration.underline,
+      decorationColor: palette.brand,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 4,
+        runSpacing: 2,
+        children: [
+          Text(LocaleKeys.termsAgreement.tr, style: base),
+          _LegalLink(
+            label: LocaleKeys.termsOfService.tr,
+            kind: LegalDocumentKind.termsOfService,
+            style: link,
+          ),
+          Text(LocaleKeys.and.tr, style: base),
+          _LegalLink(
+            label: LocaleKeys.privacyPolicy.tr,
+            kind: LegalDocumentKind.privacyPolicy,
+            style: link,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegalLink extends StatelessWidget {
+  const _LegalLink({
+    required this.label,
+    required this.kind,
+    required this.style,
+  });
+
+  final String label;
+  final LegalDocumentKind kind;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => AppRouter.toNamed<void>(
+        Routes.MARKETPLACE_LEGAL,
+        arguments: kind,
+      ),
+      behavior: HitTestBehavior.opaque,
+      child: Text(label, style: style),
     );
   }
 }

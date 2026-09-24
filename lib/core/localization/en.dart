@@ -391,7 +391,6 @@ const Map<String, String> en = {
   'items_count': '@count items',
   'items_count_one': '@count item',
   'sellers_subtitle': 'Libyan makers selling straight from the workshop',
-  'chat_on_whatsapp': 'Chat on WhatsApp',
   'clear_search': 'Clear search',
   'loading_more_sellers': 'Loading more stores…',
   'products_label': 'Products',
@@ -584,6 +583,33 @@ const Map<String, String> en = {
   'delivery_unavailable_short': 'Not deliverable',
   'delivery_days': 'Arrives in about @days days',
   'close': 'Close',
+  'delete_account': 'Delete account',
+  'delete_account_row_hint': 'Erase your account and personal data',
+  'delete_account_body':
+      'This removes your Amazonat account. It cannot be undone from the app.',
+  'delete_account_point_access':
+      'You are signed out straight away and can no longer sign in with this phone number.',
+  'delete_account_point_grace':
+      'Your personal data — name, phone, email and saved addresses — is permanently erased 30 days after the request.',
+  'delete_account_point_orders':
+      'Order and payment records are kept as financial documents, with the details that identify you removed.',
+  'delete_account_acknowledge':
+      'I understand my account will be deleted and this cannot be undone from the app.',
+  'delete_account_confirm': 'Delete my account',
+  'delete_account_done_title': 'Account scheduled for deletion',
+  'delete_account_done_body':
+      'Your data will be erased in @days days. Contact support before then to reverse it.',
+  'delete_account_done_on':
+      'Your data will be erased on @date. Contact support before then to reverse it.',
+  'help_center_subtitle': 'Answers, and a way to reach us',
+  'still_need_help': 'Still need help?',
+  'still_need_help_body':
+      'Write to us with your order number and we will get back to you.',
+  'email_support': 'Email support',
+  'call_support': 'Call support',
+  'support_email_subject': 'Amazonat app — support request',
+  'last_updated_on': 'Last updated @date',
+  'legal_section_label': 'Legal',
   'app_version': 'Version',
   'sign_in_required_title': 'Sign in to continue',
   'sign_in_required_checkout':

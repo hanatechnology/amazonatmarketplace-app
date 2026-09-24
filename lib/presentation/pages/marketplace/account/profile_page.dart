@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../app/routes/app_routes.dart';
+import '../../../../core/components/marketplace/account/delete_account_sheet.dart';
 import '../../../../core/components/marketplace/appearance_sheet.dart';
+import '../../../../core/legal/legal_document.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/localization/locale_controller.dart';
 import '../../../../core/localization/locale_keys.dart';
@@ -115,11 +117,38 @@ class _SignedInAccount extends StatelessWidget {
                 onTap: controller.goToHelp,
               ),
               _MenuRow(
+                icon: Icons.shield_outlined,
+                label: LocaleKeys.privacyPolicy.tr,
+                onTap: controller.goToPrivacyPolicy,
+              ),
+              _MenuRow(
+                icon: Icons.description_outlined,
+                label: LocaleKeys.termsOfService.tr,
+                onTap: controller.goToTerms,
+              ),
+              _MenuRow(
                 icon: Icons.logout_rounded,
                 label: LocaleKeys.logout.tr,
                 isDanger: true,
                 showChevron: false,
                 onTap: controller.logout,
+              ),
+              // Deliberately last and on its own: erasing the account is not a
+              // sibling of the settings above it, and both stores require it to
+              // be reachable from inside the app.
+              Obx(
+                () => _MenuRow(
+                  icon: Icons.delete_outline_rounded,
+                  label: LocaleKeys.deleteAccount.tr,
+                  isDanger: true,
+                  showChevron: false,
+                  isBusy: controller.isDeletingAccount.value,
+                  onTap: () async {
+                    if (controller.isDeletingAccount.value) return;
+                    final confirmed = await showDeleteAccountSheet(context);
+                    if (confirmed) await controller.deleteAccount();
+                  },
+                ),
               ),
               const SizedBox(height: 24),
               const _VersionFooter(),
@@ -180,6 +209,22 @@ class _GuestAccount extends StatelessWidget {
               icon: Icons.help_outline_rounded,
               label: LocaleKeys.helpCenter.tr,
               onTap: () => AppRouter.toNamed<void>(Routes.MARKETPLACE_HELP),
+            ),
+            _MenuRow(
+              icon: Icons.shield_outlined,
+              label: LocaleKeys.privacyPolicy.tr,
+              onTap: () => AppRouter.toNamed<void>(
+                Routes.MARKETPLACE_LEGAL,
+                arguments: LegalDocumentKind.privacyPolicy,
+              ),
+            ),
+            _MenuRow(
+              icon: Icons.description_outlined,
+              label: LocaleKeys.termsOfService.tr,
+              onTap: () => AppRouter.toNamed<void>(
+                Routes.MARKETPLACE_LEGAL,
+                arguments: LegalDocumentKind.termsOfService,
+              ),
             ),
             const SizedBox(height: 24),
             const _VersionFooter(),
@@ -415,6 +460,7 @@ class _MenuRow extends StatelessWidget {
     this.badgeCount,
     this.isDanger = false,
     this.showChevron = true,
+    this.isBusy = false,
   });
 
   final IconData icon;
@@ -425,6 +471,10 @@ class _MenuRow extends StatelessWidget {
   final bool isDanger;
   final bool showChevron;
 
+  /// Swaps the chevron for a spinner and swallows taps while a row's action is
+  /// still running.
+  final bool isBusy;
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
@@ -433,7 +483,7 @@ class _MenuRow extends StatelessWidget {
         isDanger ? StatusTone.danger.foreground(isDark) : palette.textSecondary;
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: isBusy ? null : onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
@@ -501,7 +551,13 @@ class _MenuRow extends StatelessWidget {
               ),
               const SizedBox(width: 8),
             ],
-            if (showChevron)
+            if (isBusy)
+              SizedBox(
+                width: 15,
+                height: 15,
+                child: CircularProgressIndicator(strokeWidth: 1.8, color: tint),
+              )
+            else if (showChevron)
               Icon(
                 Icons.chevron_right_rounded,
                 size: 17,

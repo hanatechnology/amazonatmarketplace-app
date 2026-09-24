@@ -63,3 +63,8 @@ app.*.map.json
 /android/app/*.jks
 /android/app/*.keystore
 /ios/Flutter/Secrets.xcconfig
+
+# Public policy pages — deployed to the web server by hand, not part of the app
+# build. Kept in the working tree so the wording stays next to the in-app
+# copy it mirrors (lib/core/legal/), but never pushed.
+/legal-web/
