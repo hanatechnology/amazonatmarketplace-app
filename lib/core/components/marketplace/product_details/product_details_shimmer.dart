@@ -18,61 +18,61 @@ class ProductDetailsShimmer extends StatelessWidget {
 
   final double gutter;
 
+  /// Matches `ProductDetailsPage._sheetOverlap` — the sheet rides this far up
+  /// over the hero on the loaded page, and the placeholder has to agree.
+  static const double _sheetOverlap = 26;
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Shimmer.fromColors(
-          baseColor: palette.shimmerBase,
-          highlightColor: palette.shimmerHighlight,
-          child: Container(
-            height: ProductHero.heightFor(context),
-            width: double.infinity,
-            color: palette.shimmerBase,
+    return SingleChildScrollView(
+      // Laid out exactly like the loaded page — hero box, then a sheet riding
+      // 26 up over it — so nothing shifts when the product lands. It scrolls
+      // for the same reason the real page does: on a wide screen the 4:5 hero
+      // is taller than the viewport, and a fixed Column would hand the
+      // skeleton zero height and leave the image block filling the screen.
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Shimmer.fromColors(
+            baseColor: palette.shimmerBase,
+            highlightColor: palette.shimmerHighlight,
+            child: Container(
+              height: ProductHero.heightFor(context),
+              width: double.infinity,
+              color: palette.shimmerBase,
+            ),
           ),
-        ),
-        Expanded(
-          // The real page scrolls, and the hero is now a full-width 4:5 box —
-          // tall enough that the skeleton beneath it no longer fits on a short
-          // device. Clipped rather than scrollable: this is a placeholder, and
-          // nothing in it rewards being reached.
-          child: ClipRect(
-            child: OverflowBox(
-              alignment: AlignmentDirectional.topStart,
-              maxHeight: double.infinity,
-              child: Transform.translate(
-                offset: const Offset(0, -26),
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: palette.background,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(28),
-                    ),
-                  ),
-                  padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const _LoadingLine(),
-                      const SizedBox(height: 14),
-                      Shimmer.fromColors(
-                        baseColor: palette.shimmerBase,
-                        highlightColor: palette.shimmerHighlight,
-                        child: const _Skeleton(),
-                      ),
-                    ],
-                  ),
+          Transform.translate(
+            offset: const Offset(0, -_sheetOverlap),
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: palette.background,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
                 ),
+              ),
+              padding: EdgeInsets.fromLTRB(gutter, 16, gutter, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _LoadingLine(),
+                  const SizedBox(height: 14),
+                  Shimmer.fromColors(
+                    baseColor: palette.shimmerBase,
+                    highlightColor: palette.shimmerHighlight,
+                    child: const _Skeleton(),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

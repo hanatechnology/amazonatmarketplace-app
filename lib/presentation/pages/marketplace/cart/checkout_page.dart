@@ -104,6 +104,8 @@ class CheckoutPage extends GetView<CheckoutController> {
               total: controller.total,
               shippingFee: controller.shippingFee.value?.chargeable,
               isShippingLoading: controller.isLoadingShipping.value,
+              deliveryUnavailable: controller.deliveryUnavailable.value,
+              estimatedDays: controller.shippingFee.value?.estimatedDays,
               isLoading: controller.isCheckingOut.value,
               // Always live: tapping with a step missing is how the customer
               // finds out which one, and a dead button explains nothing.

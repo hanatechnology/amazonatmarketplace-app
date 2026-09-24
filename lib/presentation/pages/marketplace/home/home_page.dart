@@ -189,6 +189,10 @@ class _HomePageState extends State<HomePage> {
                               onAction: () => AppRouter.toNamed(
                                   Routes.MARKETPLACE_PRODUCTS_LIST),
                             ),
+                            // The grid is a sibling sliver, so the rhythm the
+                            // other sections get from their own SizedBox has
+                            // to be closed out here instead.
+                            const SizedBox(height: 10),
                           ],
                         ),
                       ),

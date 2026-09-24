@@ -72,8 +72,9 @@ abstract class BaseStateController<U> extends GetxController {
       // for developers.
       final message =
           e is AppException ? e.localizedMessage : LocaleKeys.errorUnexpected.tr;
-      _getOrCreate<T>(key).value = AppStateError(message);
-      onError?.call(message, null);
+      final status = e is AppException ? e.httpStatus : null;
+      _getOrCreate<T>(key).value = AppStateError(message, code: status);
+      onError?.call(message, status);
       _handleError(message);
     }
   }
@@ -134,7 +135,10 @@ abstract class BaseStateController<U> extends GetxController {
       // for developers.
       final message =
           e is AppException ? e.localizedMessage : LocaleKeys.errorUnexpected.tr;
-      _getOrCreate<List<T>>(key).value = AppStateError(message);
+      _getOrCreate<List<T>>(key).value = AppStateError(
+        message,
+        code: e is AppException ? e.httpStatus : null,
+      );
     }
   }
 
@@ -152,7 +156,7 @@ abstract class BaseStateController<U> extends GetxController {
   }) =>
       result.fold(
         onSuccess: (data) => AppStateSuccess(mapper(data), message: successMessage),
-        onFailure: (e) => AppStateError(e.localizedMessage),
+        onFailure: (e) => AppStateError(e.localizedMessage, code: e.httpStatus),
       );
 
   /// Convert a [Result<T>] directly to [AppState<T>].
@@ -162,7 +166,7 @@ abstract class BaseStateController<U> extends GetxController {
   }) =>
       result.fold(
         onSuccess: (data) => AppStateSuccess(data, message: successMessage),
-        onFailure: (e) => AppStateError(e.localizedMessage),
+        onFailure: (e) => AppStateError(e.localizedMessage, code: e.httpStatus),
       );
 }
 

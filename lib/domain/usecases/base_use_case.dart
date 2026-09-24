@@ -61,7 +61,7 @@ abstract class BaseUseCase<Input, Output, R> {
       result.fold(
         onSuccess: (dto) =>
             AppStateSuccess(mapper(dto), message: successMessage),
-        onFailure: (e) => AppStateError(e.localizedMessage),
+        onFailure: (e) => AppStateError(e.localizedMessage, code: e.httpStatus),
       );
 
   /// Convert a [Result<Output>] → [AppState<Output>] directly.
@@ -72,7 +72,7 @@ abstract class BaseUseCase<Input, Output, R> {
       result.fold(
         onSuccess: (data) =>
             AppStateSuccess(data, message: successMessage),
-        onFailure: (e) => AppStateError(e.localizedMessage),
+        onFailure: (e) => AppStateError(e.localizedMessage, code: e.httpStatus),
       );
 
   /// Convert a [Result<List<DTO>>] → [AppState<List<Output>>].
@@ -82,7 +82,7 @@ abstract class BaseUseCase<Input, Output, R> {
   }) =>
       result.fold(
         onSuccess: (list) => AppStateSuccess(list.map(mapper).toList()),
-        onFailure: (e) => AppStateError(e.localizedMessage),
+        onFailure: (e) => AppStateError(e.localizedMessage, code: e.httpStatus),
       );
 
   /// Convert a paginated result.
@@ -97,7 +97,7 @@ abstract class BaseUseCase<Input, Output, R> {
           totalPages: paginated.totalPages,
           totalItems: paginated.totalItems,
         )),
-        onFailure: (e) => AppStateError(e.localizedMessage),
+        onFailure: (e) => AppStateError(e.localizedMessage, code: e.httpStatus),
       );
 }
 

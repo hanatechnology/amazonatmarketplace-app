@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../localization/locale_keys.dart';
 import '../../../theme/marketplace_palette.dart';
+import '../../../theme/marketplace_colors.dart';
 import '../../../theme/marketplace_radius.dart';
 import '../../../theme/marketplace_typography.dart';
 import '../../../utils/price_formatter.dart';
@@ -16,6 +17,8 @@ class CheckoutBottomBarDto {
     required this.onPlaceOrder,
     this.shippingFee,
     this.isShippingLoading = false,
+    this.deliveryUnavailable = false,
+    this.estimatedDays,
   });
 
   final double subtotal;
@@ -27,6 +30,13 @@ class CheckoutBottomBarDto {
   /// reads as pending rather than claiming a free delivery.
   final double? shippingFee;
   final bool isShippingLoading;
+
+  /// The store does not cover the chosen address — the preview answered 400.
+  /// The row says so instead of sitting on "pending" forever.
+  final bool deliveryUnavailable;
+
+  /// `estimatedDays` from the preview, when the zone carries one.
+  final int? estimatedDays;
 
   final bool isLoading;
   final bool isEnabled;
@@ -68,16 +78,25 @@ class CheckoutBottomBar extends StatelessWidget {
               const SizedBox(height: 6),
               _SummaryRow(
                 label: LocaleKeys.shippingFee.tr,
-                child: data.shippingFee == null || data.isShippingLoading
-                    ? Text(
-                        LocaleKeys.shippingPending.tr,
-                        style: MarketplaceTypography.rowMeta.copyWith(
-                          fontSize: 10.5,
-                          color: palette.textMuted,
-                        ),
-                      )
-                    : _Money(amount: data.shippingFee!),
+                child: _ShippingValue(data: data),
               ),
+              if (!data.deliveryUnavailable &&
+                  !data.isShippingLoading &&
+                  (data.estimatedDays ?? 0) > 0) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    LocaleKeys.deliveryDays.trParams(
+                      {'days': '${data.estimatedDays}'},
+                    ),
+                    style: MarketplaceTypography.rowMeta.copyWith(
+                      fontSize: 10.5,
+                      color: palette.textMuted,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 10),
               Container(
                 padding: const EdgeInsets.only(top: 10),
@@ -134,6 +153,44 @@ class CheckoutBottomBar extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+/// Pending until the preview lands, the fee once it does, and a plain refusal
+/// when the store does not reach the address at all.
+class _ShippingValue extends StatelessWidget {
+  const _ShippingValue({required this.data});
+
+  final CheckoutBottomBarDto data;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+
+    if (data.deliveryUnavailable) {
+      return Text(
+        LocaleKeys.deliveryUnavailableShort.tr,
+        style: MarketplaceTypography.rowMeta.copyWith(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          color: MarketplaceColors.errorContent,
+        ),
+      );
+    }
+
+    if (data.shippingFee == null || data.isShippingLoading) {
+      return Text(
+        data.isShippingLoading
+            ? LocaleKeys.checkingDelivery.tr
+            : LocaleKeys.shippingPending.tr,
+        style: MarketplaceTypography.rowMeta.copyWith(
+          fontSize: 10.5,
+          color: palette.textMuted,
+        ),
+      );
+    }
+
+    return _Money(amount: data.shippingFee!);
   }
 }
 

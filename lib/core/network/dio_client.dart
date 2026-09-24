@@ -98,6 +98,7 @@ class DioClient {
             message,
             fieldErrors: fieldErrors,
             code: code,
+            statusCode: statusCode,
           );
         }
 
@@ -107,7 +108,7 @@ class DioClient {
           403 => ForbiddenException(message),
           404 => NotFoundException(message),
           409 => ConflictException(message, code: code, args: args),
-          422 => ValidationException(message, code: code),
+          422 => ValidationException(message, code: code, statusCode: 422),
           429 => RateLimitException(message, code: code, args: args),
           _ => ServerException(
               message,

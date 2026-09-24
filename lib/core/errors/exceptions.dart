@@ -21,6 +21,32 @@ sealed class AppException implements Exception {
   /// First failure code reported for [field], if any.
   String? fieldCode(String field) => fieldErrors?[field]?.firstOrNull;
 
+  /// HTTP status this failure came from, when the transport knew one.
+  ///
+  /// Typed subclasses already encode the status they were built for, so a
+  /// caller can branch on a business outcome the contract only expresses as a
+  /// status — a coverage 400 from `GET /orders/shipping-fee`, a 404 from a
+  /// withdrawn product — without reaching back into the Dio layer.
+  int? get httpStatus => switch (this) {
+        BadRequestException() => 400,
+        UnauthorizedException() => 401,
+        ForbiddenException() => 403,
+        NotFoundException() => 404,
+        ConflictException() => 409,
+        RateLimitException() => 429,
+        // Carries its own: a per-field breakdown arrives on 400 as well as 422.
+        ValidationException(statusCode: final status) => status,
+        ServerException(statusCode: final status) => status,
+        NetworkException() ||
+        TimeoutException() ||
+        ParseException() ||
+        StorageException() ||
+        AuthException() ||
+        FileException() ||
+        UnexpectedException() =>
+          null,
+      };
+
   @override
   String toString() => '$runtimeType: $message${code == null ? '' : ' ($code)'}';
 }
@@ -83,7 +109,14 @@ final class RateLimitException extends AppException {
 
 /// Validation error — 400 / 422 with a per-field breakdown.
 final class ValidationException extends AppException {
-  const ValidationException(super.message, {super.fieldErrors, super.code});
+  const ValidationException(
+    super.message, {
+    super.fieldErrors,
+    super.code,
+    this.statusCode,
+  });
+
+  final int? statusCode;
 }
 
 /// JSON parsing failed.

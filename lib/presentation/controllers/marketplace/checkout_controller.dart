@@ -50,7 +50,10 @@ class CheckoutController extends GetxController {
 
   // ── Computed ──────────────────────────────────────────────
   bool get canPlaceOrder =>
-      selectedAddressId.value != null && selectedPayment.value != null;
+      selectedAddressId.value != null &&
+      selectedPayment.value != null &&
+      !deliveryUnavailable.value &&
+      !isLoadingShipping.value;
 
   /// Items minus discount, plus whatever delivery costs once an address is
   /// picked. The fee is only known after the preview call returns.
@@ -160,8 +163,16 @@ class CheckoutController extends GetxController {
       paymentError.value = true;
       valid = false;
     }
+    // The coverage check is the one failure the customer cannot reason about
+    // from the form alone, so it is spelled out rather than only flagged.
     if (deliveryUnavailable.value) {
       addressError.value = true;
+      _showError(LocaleKeys.vendorDoesNotDeliver.tr);
+      valid = false;
+    } else if (isLoadingShipping.value) {
+      // Submitting mid-preview would charge a total the customer never saw,
+      // and the pair may still turn out to be uncovered.
+      _showError(LocaleKeys.checkingDelivery.tr);
       valid = false;
     }
     if (requiresEdfaliMobile && edfaliMobile.text.trim().isEmpty) {
@@ -225,19 +236,23 @@ class CheckoutController extends GetxController {
       },
       onError: (message, _) {
         isCheckingOut.value = false;
-        Get.snackbar(
-          LocaleKeys.error.tr,
-          message,
-          backgroundColor: const Color(0xFFFFEBEE),
-          colorText: const Color(0xFFD32F2F),
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
-        );
+        _showError(message);
       },
     );
   }
 
   // ── Private ───────────────────────────────────────────────
+  void _showError(String message) {
+    Get.snackbar(
+      LocaleKeys.error.tr,
+      message,
+      backgroundColor: const Color(0xFFFFEBEE),
+      colorText: const Color(0xFFD32F2F),
+      snackPosition: SnackPosition.BOTTOM,
+      margin: const EdgeInsets.all(16),
+    );
+  }
+
   Future<void> _loadAddresses() async {
     isLoadingAddresses.value = true;
 

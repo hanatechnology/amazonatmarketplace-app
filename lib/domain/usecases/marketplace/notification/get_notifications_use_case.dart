@@ -32,7 +32,8 @@ class GetNotificationsUseCase
           totalItems: page.totalItems,
         ),
       ),
-      onFailure: (exception) => AppStateError(exception.localizedMessage),
+      onFailure: (exception) =>
+          AppStateError(exception.localizedMessage, code: exception.httpStatus),
     );
   }
 }

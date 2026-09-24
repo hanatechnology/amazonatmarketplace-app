@@ -599,6 +599,9 @@ abstract class LocaleKeys {
   static const String stockLimitReached = 'stock_limit_reached';
   static const String onlyNLeft = 'only_n_left';
   static const String vendorDoesNotDeliver = 'vendor_does_not_deliver';
+  static const String checkingDelivery = 'checking_delivery';
+  static const String deliveryUnavailableShort = 'delivery_unavailable_short';
+  static const String deliveryDays = 'delivery_days';
   static const String close = 'close';
   static const String appVersion = 'app_version';
 }
