@@ -2,14 +2,6 @@ import 'package:get/get.dart';
 import 'package:marketplace/domain/usecases/marketplace/address/get_addresses_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/product/get_categories_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/product/get_category_tree_use_case.dart';
-import 'package:marketplace/domain/usecases/marketplace/cart/get_local_cart_use_case.dart';
-import 'package:marketplace/domain/usecases/marketplace/cart/add_to_local_cart_use_case.dart';
-import 'package:marketplace/domain/usecases/marketplace/cart/remove_from_local_cart_use_case.dart';
-import 'package:marketplace/domain/usecases/marketplace/cart/update_local_cart_quantity_use_case.dart';
-import 'package:marketplace/domain/usecases/marketplace/cart/toggle_local_cart_selection_use_case.dart';
-import 'package:marketplace/domain/usecases/marketplace/cart/set_local_cart_select_all_use_case.dart';
-import 'package:marketplace/domain/usecases/marketplace/cart/clear_local_cart_use_case.dart';
-import 'package:marketplace/presentation/controllers/marketplace/cart_controller.dart';
 import 'package:marketplace/presentation/controllers/marketplace/category_controller.dart';
 import 'package:marketplace/presentation/controllers/marketplace/home_controller.dart';
 import '../../../../presentation/controllers/marketplace/main_navigation_controller.dart';
@@ -39,7 +31,13 @@ import '../../../../domain/usecases/marketplace/cart/get_shipping_fee_use_case.d
 class MainNavigationBinding extends Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => MainNavigationController());
+    // Permanent: signing in runs `Get.offAllNamed(MAIN)` from a stack whose
+    // root is already MAIN, and GetX deletes the old route's dependencies by
+    // key after the new route's binding has run — a route-scoped shell
+    // controller is left orphaned, its badge frozen. Permanent is exempt.
+    if (!Get.isRegistered<MainNavigationController>()) {
+      Get.put(MainNavigationController(), permanent: true);
+    }
 
     // Repositories — fenix: true so they persist across tab switches
     Get.lazyPut(() => ProductRepository(Get.find<ApiService>()), fenix: true);
@@ -79,21 +77,14 @@ class MainNavigationBinding extends Bindings {
     Get.lazyPut(() => DeleteAccountUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => NotificationBadgeController(), fenix: true);
 
-    // Local cart use cases (LocalCartRepository is permanent from InitialBinding)
-    Get.lazyPut(() => GetLocalCartUseCase(Get.find()), fenix: true);
-    Get.lazyPut(() => AddToLocalCartUseCase(Get.find()), fenix: true);
-    Get.lazyPut(() => RemoveFromLocalCartUseCase(Get.find()), fenix: true);
-    Get.lazyPut(() => UpdateLocalCartQuantityUseCase(Get.find()), fenix: true);
-    Get.lazyPut(() => ToggleLocalCartSelectionUseCase(Get.find()), fenix: true);
-    Get.lazyPut(() => SetLocalCartSelectAllUseCase(Get.find()), fenix: true);
-    Get.lazyPut(() => ClearLocalCartUseCase(Get.find()), fenix: true);
+    // The local cart layer (repository, use cases, CartController) is
+    // registered permanently in InitialBinding — app state, not route state.
     Get.lazyPut(() => CheckoutUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetPaymentMethodsUseCase(Get.find()), fenix: true);
     Get.lazyPut(() => GetShippingFeeUseCase(Get.find()), fenix: true);
 
     // Controllers
     Get.lazyPut(() => HomeController(), fenix: true);
-    Get.lazyPut(() => CartController(), fenix: true);
     Get.lazyPut(() => CategoryController(), fenix: true);
     Get.lazyPut(() => SellersController(), fenix: true);
     Get.lazyPut(() => ProfileController(), fenix: true);

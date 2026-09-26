@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/components/marketplace/marketplace_bottom_nav.dart';
 import '../../../core/theme/marketplace_palette.dart';
+import '../../controllers/marketplace/cart_controller.dart';
 import '../../controllers/marketplace/main_navigation_controller.dart';
 
 // Import tab root pages
@@ -20,6 +21,18 @@ class MainNavigationPage extends StatefulWidget {
 
 class _MainNavigationPageState extends State<MainNavigationPage> {
   final controller = Get.find<MainNavigationController>();
+
+  /// The cart lives for the whole app, not for this route — the badge, the cart
+  /// tab and every "add to cart" button read this one instance.
+  final cart = Get.find<CartController>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Landing tab is per entry into the shell (a cancelled payment comes back
+    // to the cart), while the controller itself is permanent.
+    controller.applyRouteArguments(Get.arguments);
+  }
 
   // One GlobalKey per tab for independent navigation stacks
   final List<GlobalKey<NavigatorState>> _navigatorKeys = List.generate(
@@ -66,7 +79,7 @@ class _MainNavigationPageState extends State<MainNavigationPage> {
             )),
         bottomNavigationBar: Obx(() => MarketplaceBottomNav(
               currentIndex: controller.currentIndex.value,
-              cartCount: controller.cartItemCount.value,
+              cartCount: cart.cartCount,
               onTap: (index) {
                 if (controller.currentIndex.value == index) {
                   _navigatorKeys[index]

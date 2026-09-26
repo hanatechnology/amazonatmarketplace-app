@@ -16,6 +16,7 @@ import '../../../../domain/entities/marketplace/seller_entity.dart';
 import '../../../controllers/marketplace/cart_controller.dart';
 import '../../../controllers/marketplace/seller_profile_controller.dart';
 import '../../../../core/components/marketplace/sticky_back_bar.dart';
+import '../../../../core/components/marketplace/cart/cart_floating_button.dart';
 
 /// One store: banner, identity, and its products.
 ///
@@ -41,6 +42,8 @@ class SellerProfilePage extends GetView<SellerProfileController> {
       ),
       child: Scaffold(
         backgroundColor: palette.background,
+        floatingActionButton: const CartFloatingButton(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: StickyBackBar(
           tone: StickyBackTone.glass,
           child: Obx(() {

@@ -8,9 +8,17 @@ import '../../data/services/storage_service.dart';
 import '../../data/services/theme_service.dart';
 import '../../data/repositories/device_token_repository.dart';
 import '../../data/repositories/local_cart_repository.dart';
+import '../../domain/usecases/marketplace/cart/add_to_local_cart_use_case.dart';
+import '../../domain/usecases/marketplace/cart/clear_local_cart_use_case.dart';
+import '../../domain/usecases/marketplace/cart/get_local_cart_use_case.dart';
+import '../../domain/usecases/marketplace/cart/remove_from_local_cart_use_case.dart';
+import '../../domain/usecases/marketplace/cart/set_local_cart_select_all_use_case.dart';
+import '../../domain/usecases/marketplace/cart/toggle_local_cart_selection_use_case.dart';
+import '../../domain/usecases/marketplace/cart/update_local_cart_quantity_use_case.dart';
 import '../../domain/usecases/marketplace/notification/clear_device_token_use_case.dart';
 import '../../domain/usecases/marketplace/notification/register_device_token_use_case.dart';
 import '../../core/localization/locale_controller.dart';
+import '../../presentation/controllers/marketplace/cart_controller.dart';
 
 /// Initial binding that registers permanent services for the entire app lifecycle.
 class InitialBinding extends Bindings {
@@ -56,19 +64,43 @@ class InitialBinding extends Bindings {
       return null;
     });
 
-    // SharedPreferences — already initialised in main() via StorageService.init()
-    // We expose the instance here so LocalCartRepository can Get.find() it.
-    SharedPreferences.getInstance().then((prefs) {
-      if (!Get.isRegistered<SharedPreferences>()) {
-        Get.put<SharedPreferences>(prefs, permanent: true);
-      }
-      if (!Get.isRegistered<LocalCartRepository>()) {
-        Get.put<LocalCartRepository>(
-          LocalCartRepository(prefs),
-          permanent: true,
-        );
-      }
-    });
+    // SharedPreferences — already initialised in main() via StorageService.init(),
+    // so this is synchronous: the cart layer below must exist before the first
+    // build, not one microtask after it.
+    final prefs = StorageService.prefs;
+    Get.put<SharedPreferences>(prefs, permanent: true);
+    Get.put<LocalCartRepository>(LocalCartRepository(prefs), permanent: true);
+
+    // ── Cart (permanent, app-lifetime) ────────────────────────
+    //
+    // The cart is not a screen, it is app state: the tab, the nav badge and
+    // every "add to cart" button across the app read the same controller.
+    // Registering it on a route instead meant `Get.offAllNamed(MAIN)` after
+    // sign-in killed the instance the already-built cart tab was listening to
+    // (GetX deletes a route's dependencies by *key* when that route disposes,
+    // and re-running the binding is a no-op while the key is still live). The
+    // next "add to cart" then built a second controller: the write landed in
+    // storage, but the cart tab was wired to a dead one and stayed empty.
+    // Permanent instances are exempt from that deletion — one cart, always.
+    final localCart = Get.find<LocalCartRepository>();
+    Get.put<GetLocalCartUseCase>(GetLocalCartUseCase(localCart),
+        permanent: true);
+    Get.put<AddToLocalCartUseCase>(AddToLocalCartUseCase(localCart),
+        permanent: true);
+    Get.put<RemoveFromLocalCartUseCase>(RemoveFromLocalCartUseCase(localCart),
+        permanent: true);
+    Get.put<UpdateLocalCartQuantityUseCase>(
+        UpdateLocalCartQuantityUseCase(localCart),
+        permanent: true);
+    Get.put<ToggleLocalCartSelectionUseCase>(
+        ToggleLocalCartSelectionUseCase(localCart),
+        permanent: true);
+    Get.put<SetLocalCartSelectAllUseCase>(
+        SetLocalCartSelectAllUseCase(localCart),
+        permanent: true);
+    Get.put<ClearLocalCartUseCase>(ClearLocalCartUseCase(localCart),
+        permanent: true);
+    Get.put<CartController>(CartController(), permanent: true);
 
     // Push token plumbing — permanent because registration runs from the splash
     // screen and from login, both before the main shell's binding has executed.

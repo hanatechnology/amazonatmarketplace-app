@@ -18,6 +18,7 @@ import '../../../../domain/entities/marketplace/product_filter.dart';
 import '../../../controllers/marketplace/cart_controller.dart';
 import '../../../controllers/marketplace/product_search_controller.dart';
 import '../../../../core/components/marketplace/sticky_back_bar.dart';
+import '../../../../core/components/marketplace/cart/cart_floating_button.dart';
 
 /// Search — one screen with two faces.
 ///
@@ -35,6 +36,8 @@ class ProductSearchPage extends GetView<ProductSearchController> {
     final palette = context.palette;
     return Scaffold(
       backgroundColor: palette.background,
+      floatingActionButton: const CartFloatingButton(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: StickyBackBar(
         child:  SafeArea(
         bottom: false,

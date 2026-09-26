@@ -12,6 +12,7 @@ import '../../../../domain/entities/marketplace/product_entity.dart';
 import '../../../controllers/marketplace/cart_controller.dart';
 import '../../../controllers/marketplace/products_list_controller.dart';
 import '../../../../core/components/marketplace/sticky_back_bar.dart';
+import '../../../../core/components/marketplace/cart/cart_floating_button.dart';
 
 /// Products inside one category, or everything when opened from "See all".
 ///
@@ -29,6 +30,8 @@ class ProductsListPage extends GetView<ProductsListController> {
 
     return Scaffold(
       backgroundColor: palette.background,
+      floatingActionButton: const CartFloatingButton(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: StickyBackBar(
         child:  SafeArea(
         bottom: false,

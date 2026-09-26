@@ -19,6 +19,18 @@ class StorageService {
     _prefs = await SharedPreferences.getInstance();
   }
 
+  /// The already-initialised instance. `main()` awaits [init] before `runApp`,
+  /// so every binding and repository can take this synchronously instead of
+  /// re-awaiting `SharedPreferences.getInstance()` and registering itself a
+  /// frame late — the local cart depends on being there before the first build.
+  static SharedPreferences get prefs {
+    final prefs = _prefs;
+    if (prefs == null) {
+      throw StateError('StorageService.init() must run before prefs is read.');
+    }
+    return prefs;
+  }
+
   // ── Token storage (secure) ────────────────────────────────
   static const _tokenKey = 'auth_token';
   static const _refreshTokenKey = 'refresh_token';

@@ -23,6 +23,7 @@ import '../../../../domain/entities/marketplace/product_entity.dart';
 import '../../../controllers/marketplace/product_details_controller.dart';
 import '../../../../core/components/marketplace/sticky_back_bar.dart';
 import 'package:marketplace/app/routes/app_router.dart';
+import '../../../../core/components/marketplace/cart/cart_floating_button.dart';
 
 /// One product, drawn from `GET /products/{id}` and nothing else.
 ///
@@ -70,6 +71,10 @@ class ProductDetailsPage extends GetView<ProductDetailsController> {
                 ),
               );
             })),
+        // Adding from here does not leave the page, so the way back to the
+        // basket has to be on it.
+        floatingActionButton: const CartFloatingButton(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         bottomNavigationBar: Obx(() {
           final product = controller.getOperationData<ProductDetailsEntity>(
             ProductDetailsController.kProduct,

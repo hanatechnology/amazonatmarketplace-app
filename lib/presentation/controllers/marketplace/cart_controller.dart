@@ -8,7 +8,6 @@ import 'package:marketplace/domain/usecases/marketplace/cart/add_to_local_cart_u
 import 'package:marketplace/domain/usecases/marketplace/cart/remove_from_local_cart_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/update_local_cart_quantity_use_case.dart';
 import 'package:marketplace/domain/usecases/marketplace/cart/clear_local_cart_use_case.dart';
-import 'package:marketplace/presentation/controllers/marketplace/main_navigation_controller.dart';
 import 'package:marketplace/app/routes/app_routes.dart';
 import 'package:marketplace/core/components/marketplace/auth/sign_in_prompt_sheet.dart';
 import 'package:marketplace/core/localization/locale_keys.dart';
@@ -68,7 +67,6 @@ class CartController extends GetxController {
     isLoading.value = true;
     items.assignAll(_getCart.call());
     isLoading.value = false;
-    _syncNavBadge();
   }
 
   /// Called from ProductDetailsController / product card to add an item.
@@ -155,16 +153,5 @@ class CartController extends GetxController {
 
   // ── Helpers ────────────────────────────────────────────────
 
-  void _refresh() {
-    items.assignAll(_getCart.call());
-    _syncNavBadge();
-  }
-
-  void _syncNavBadge() {
-    try {
-      Get.find<MainNavigationController>().updateCartCount(cartCount);
-    } catch (_) {
-      // MainNavigationController not yet registered (e.g., during tests)
-    }
-  }
+  void _refresh() => items.assignAll(_getCart.call());
 }
